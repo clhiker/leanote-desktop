@@ -24,4 +24,4 @@ const UserService = Service.userService;
 const EvtService = require('./src/evt');
 const CommonService = Common;
 
-const gui = require('./src/gui');
+const gui = require('../gui');

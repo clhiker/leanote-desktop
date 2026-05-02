@@ -34,6 +34,6 @@ var Config = {
         }
     ],
     "lang": "zh-cn",
-    "theme": "grass",
+    "theme": "black",
     "view": "snippet"
 };

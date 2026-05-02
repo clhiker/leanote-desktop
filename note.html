@@ -21,6 +21,7 @@
 <link href="public/themes/markdown/meditor.css" rel="stylesheet" />
 <!-- markdown theme -->
 <link rel="stylesheet" href="public/themes/markdown/default/index.css" type="text/css" id="md-theme"/>
+<link rel="stylesheet" href="public/md/modern-markdown.css" type="text/css"/>
 
 <!-- theme -->
 <link rel="stylesheet" href="public/themes/default.css" type="text/css"/>
@@ -672,7 +673,7 @@ window.isDebug = false;
 <!-- 导入插件 执行 -->
 <script src="public/js/main.js"></script>
 <!-- markdown editor -->
-<script src="public/md/main-v2.min.js"></script>
+<script src="public/md/modern-markdown.js"></script>
 <!-- extra额外 -->
 <script src="public/js/dec/main.js"></script>
 
@@ -680,13 +681,11 @@ window.isDebug = false;
 window.require = window.requireNode;
 </script>
 <!-- 升级 -->
+<!-- nw.gui shim for electron (replaces https://leanote.com/js/app_electron.js) -->
+<script src="public/js/nw-gui-shim.js"></script>
 <script>
-(function () {
-  var s = document.createElement('script');
-  s.type = 'text/javascript';
-  s.src = 'https://leanote.com/js/app_electron.js?t=' + Math.ceil(new Date() / 3600000);
-  document.getElementsByTagName('body')[0].appendChild(s);
-})();
+// Initialize Service object with gui module injected
+window.Service = window.loadService();
 </script>
 </body>
 </html>

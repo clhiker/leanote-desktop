@@ -1,20 +1,11 @@
 // var app = require('electron').app;  // Module to control application life.
 
-const {app, BrowserWindow, crashReporter, Tray, Menu, ipcMain: ipc} = require('electron');
+const {app, BrowserWindow, Tray, Menu, ipcMain: ipc} = require('electron');
 
 const pdfMain = require('./src/pdf_main');
 let appIcon;
 
-// Report crashes to our server.
-crashReporter.start({
-    productName: 'Leanote',
-    companyName: 'Leanote',
-    submitURL: 'https://leanote.com/leanote-desktop/crash-reporter',
-    autoSubmit: true
-});
-
 const remoteMain = require('@electron/remote/main')
-remoteMain.initialize()
 
 app.on('browser-window-created', (_, win) => {
     remoteMain.enable(win.webContents);
@@ -131,7 +122,10 @@ const DB = {
 
 // This method will be called when Electron has done everything
 // initialization and ready for creating browser windows.
-app.on('ready', openIt);
+app.on('ready', () => {
+    remoteMain.initialize();
+    openIt();
+});
 
 function removeEvents(win) {
     win.removeAllListeners('closed');

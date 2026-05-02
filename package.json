@@ -3,16 +3,25 @@
   "version": "1.0.0",
   "main": "main.js",
   "dependencies": {
-    "electron": "^36.0.0",
     "@electron/remote": "^2.0.10",
     "adm-zip": ">=0.4.11",
     "async": "0.9.0",
     "iconv-lite": "0.4.15",
+    "markdown-it": "^14.1.1",
+    "markdown-it-anchor": "^9.2.0",
+    "markdown-it-emoji": "^3.0.0",
+    "markdown-it-footnote": "^4.0.0",
+    "markdown-it-mark": "^4.0.0",
+    "markdown-it-task-lists": "^2.1.1",
     "mkdirp": "0.3.5",
     "nedb": "1.1.1",
     "needle": "git://github.com/leanote/needle.git",
     "node-getmac": "1.0.3",
+    "twemoji": "^14.0.2",
     "validator": ">=3.22.1",
     "xml2js": "0.4.6"
+  },
+  "devDependencies": {
+    "electron": "^20.3.12"
   }
 }

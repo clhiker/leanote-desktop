@@ -42,6 +42,6 @@ const Resanitize = require('./src/resanitize');
 // route = /note/notebook
 // 过时
 Service.dispatch = function() {};
-var gui = require('./src/gui');
+var gui = require('../gui');
 
 var projectPath = __dirname;
