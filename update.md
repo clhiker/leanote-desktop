@@ -149,3 +149,47 @@
 1. 加入高亮主题（highlight.js）并统一代码块样式。
 2. 增加 Markdown 回归样例文档（emoji、表格、任务列表、脚注、数学公式）用于快速验收。
 3. 若需要离线 emoji 图片，可将 twemoji 资源改为本地静态托管，避免外网依赖。
+
+---
+
+## 日期
+- 2026-05-07
+
+## 本轮目标
+- 实现 DevTools 调试窗口可选开启，提升生产环境使用体验。
+- 添加 --debug 命令行参数控制调试模式。
+
+## 已完成事项
+
+### 1. 添加调试模式参数控制
+- 在 main.js 入口处添加 isDebugMode 变量检测 --devtools 参数：
+  ```javascript
+  const isDebugMode = process.argv.includes('--devtools');
+  ```
+- 修改 DevTools 打开逻辑，仅在 debug 模式下自动开启：
+  ```javascript
+  if (isDebugMode) {
+      mainWindow.webContents.openDevTools();
+  }
+  ```
+
+### 2. 行为变更
+- 默认启动（`npx electron .`）：不打开 DevTools，提供干净的运行环境。
+- 调试启动（`npx electron --devtools .`）：自动打开 DevTools，便于开发者调试。
+
+### 3. 技术说明
+- 使用 `--devtools` 而非 `--debug` 是为了避免与 Node.js 内置参数冲突（Node.js 已废弃 `--debug`）。
+- 参数名 `devtools` 更直观，表明开启 DevTools 调试窗口。
+
+## 当前状态
+- 命令行参数解析已就绪。
+- 调试模式切换功能可用。
+
+## 待验证（人工 UI）
+- 确认默认启动时 DevTools 不再自动弹出。
+- 确认 --debug 参数启动时 DevTools 正常打开。
+
+## 下轮建议
+1. 考虑增加更多启动参数（如 --fullscreen 全屏启动）。
+2. 添加启动参数帮助说明（--help）。
+3. 优化日志输出级别（debug 模式下显示更多调试信息）。

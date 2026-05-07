@@ -2,6 +2,8 @@
 
 const {app, BrowserWindow, Tray, Menu, ipcMain: ipc} = require('electron');
 
+const isDebugMode = process.argv.includes('--devtools');
+
 const pdfMain = require('./src/pdf_main');
 let appIcon;
 
@@ -222,7 +224,9 @@ function openIt() {
     })
 
     // 代码调试阶段——启动直接打开控制台
-    mainWindow.webContents.openDevTools()
+    if (isDebugMode) {
+        mainWindow.webContents.openDevTools();
+    }
 
     console.log('load: file://' + __dirname + '/note.html');
 
