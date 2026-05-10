@@ -684,8 +684,8 @@ window.require = window.requireNode;
 <!-- nw.gui shim for electron (replaces https://leanote.com/js/app_electron.js) -->
 <script src="public/js/nw-gui-shim.js"></script>
 <script>
-// Initialize Service object with gui module injected
-window.Service = window.loadService();
+// Service is already loaded by service.js script tag
+// window.Service = window.loadService();
 </script>
 </body>
 </html>

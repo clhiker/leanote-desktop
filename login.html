@@ -64,7 +64,7 @@ if(process.platform !== 'darwin') {
 						</div>
 						<div class="form-group pwd-group">
 							<input type="password" required placeholder="Confirm password" class="form-control lang-placeholder" id="pwd2" name="pwd2">
-							<button id="regBtn" class="btn-embeded" disabled>
+							<button type="button" id="regBtn" class="btn-embeded" disabled>
 								<i class="btn-go fa fa-arrow-right"></i>
 								<i class="btn-loading"><img src="public/images/loading-24.gif"/></i>
 						</button>
@@ -86,7 +86,7 @@ if(process.platform !== 'darwin') {
 						</div>
 						<div class="form-group pwd-group">
 						    <input type="password" placeholder="Password" class="form-control lang-placeholder" id="pwd" name="pwd">
-						    <button id="loginBtn" class="btn-embeded" disabled>
+						    <button type="button" id="loginBtn" class="btn-embeded" disabled>
 						    	<i class="btn-go fa fa-arrow-right"></i>
 						    	<i class="btn-loading"><img src="public/images/loading-24.gif"/></i>
 						</button>
@@ -153,9 +153,16 @@ $(function() {
 
 	var $email = $("#email");
 	var $host = $('#host');
+	var $pwd = $("#pwd");
 
 	var $body = $('body');
 
+	// Enter key to submit login form
+	$email.add($pwd).add($host).keydown(function(e) {
+		if (e.keyCode === 13 && !$loginBtnO.prop('disabled')) {
+			$loginBtnO.click();
+		}
+	});
 
 	$("#loginBtn").click(function(e) {
 		e.preventDefault();

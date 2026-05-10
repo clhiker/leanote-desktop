@@ -11,6 +11,14 @@
 
 @leftNotebookColor: #eee;
 
+body, html {
+  background-color: @noteBg !important;
+}
+
+#page, #pageInner {
+  background-color: @noteBg !important;
+}
+
 #leftNotebook {
   background: none !important;
   background-color: @noteBgOpacity !important;
@@ -177,6 +185,30 @@
   color: @txtcolor;
   // top: 0;
 }
+#editor {
+  background: @noteBg;
+}
+#editorContentWrap {
+  background: #302E2E;
+}
+#editorContent {
+  background: @noteBg;
+  color: @txtcolor;
+}
+// TinyMCE editor area white background fix
+div.mce-edit-area {
+  background: @noteBg !important;
+}
+.mce-container-body {
+  background: @noteBg !important;
+}
+.mce-tinymce {
+  background: @noteBg !important;
+}
+// TinyMCE iframe body
+#editorContent_ifr {
+  background: @noteBg;
+}
 #noteTitle {
   background-color: @noteBg !important;
   color: @txtcolor;
@@ -293,6 +325,65 @@ code.prettyprint, pre.prettyprint {
   }
 }
 
+// hljs code blocks
+#mdEditor #wmd-preview pre.hljs {
+  background: #1e1e1e;
+}
+#mdEditor #wmd-preview pre.hljs code {
+  background: transparent;
+  color: #d4d4d4;
+}
+// dark hljs syntax colors
+#mdEditor #wmd-preview .hljs-keyword,
+#mdEditor #wmd-preview .hljs-selector-tag,
+#mdEditor #wmd-preview .hljs-type { color: #ff7b72; }
+#mdEditor #wmd-preview .hljs-string,
+#mdEditor #wmd-preview .hljs-template-tag { color: #a5d6ff; }
+#mdEditor #wmd-preview .hljs-comment { color: #8b949e; }
+#mdEditor #wmd-preview .hljs-number,
+#mdEditor #wmd-preview .hljs-literal { color: #79c0ff; }
+#mdEditor #wmd-preview .hljs-function,
+#mdEditor #wmd-preview .hljs-title,
+#mdEditor #wmd-preview .hljs-title.class_ { color: #d2a8ff; }
+#mdEditor #wmd-preview .hljs-built_in { color: #ffa657; }
+#mdEditor #wmd-preview .hljs-params { color: #d4d4d4; }
+#mdEditor #wmd-preview .hljs-variable,
+#mdEditor #wmd-preview .hljs-name { color: #ffa657; }
+#mdEditor #wmd-preview .hljs-regexp { color: #a5d6ff; }
+#mdEditor #wmd-preview .hljs-meta { color: #79c0ff; }
+#mdEditor #wmd-preview .hljs-tag { color: #7ee787; }
+#mdEditor #wmd-preview .hljs-attr { color: #d2a8ff; }
+#mdEditor #wmd-preview .hljs-selector-id,
+#mdEditor #wmd-preview .hljs-selector-class { color: #d2a8ff; }
+#mdEditor #wmd-preview code:not(pre code) {
+  background: rgba(255,255,255,0.08);
+  color: #d4d4d4;
+}
+#mdEditor #wmd-preview table th,
+#mdEditor #wmd-preview table td {
+  border-color: #3a3a3a;
+}
+#mdEditor #wmd-preview table th {
+  background: #2a2a2a;
+}
+#mdEditor #wmd-preview table tr:nth-child(even) {
+  background: rgba(255,255,255,0.03);
+}
+#mdEditor #wmd-preview hr {
+  border-top-color: #504E4E;
+}
+#mdEditor #wmd-preview hr.footnotes-sep {
+  border-top-color: #504E4E;
+}
+#mdEditor #wmd-preview mark {
+  background: rgba(255,243,176,0.25);
+  color: inherit;
+}
+#mdEditor #wmd-preview blockquote {
+  border-left-color: #504E4E;
+  color: #aaa;
+}
+
 // 文档导航
 #leanoteNav, #leanoteNavMd {
   background-color: #2A2828;
@@ -383,7 +474,7 @@ textarea#wmd-input {
     color: @mdAceTextColor;
   }
   &.ace-tm {
-    background-color: #ffffff;
+    background-color: @noteBg;
   }
  
   &.ace-tm .ace_marker-layer .ace_active-line {

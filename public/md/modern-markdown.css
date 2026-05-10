@@ -38,16 +38,144 @@
   max-width: 100%;
 }
 
-#mdEditor #wmd-preview pre {
-  padding: 10px;
+/* Code blocks with highlight.js */
+#mdEditor #wmd-preview pre.hljs {
+  padding: 14px 16px;
   overflow: auto;
   background: #f6f8fa;
   border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #24292e;
 }
 
+#mdEditor #wmd-preview pre.hljs code {
+  padding: 0;
+  background: transparent;
+  font-size: inherit;
+  color: inherit;
+}
+
+/* highlight.js github-like theme */
+#mdEditor #wmd-preview .hljs-keyword,
+#mdEditor #wmd-preview .hljs-selector-tag,
+#mdEditor #wmd-preview .hljs-type { color: #d73a49; }
+#mdEditor #wmd-preview .hljs-string,
+#mdEditor #wmd-preview .hljs-attr,
+#mdEditor #wmd-preview .hljs-template-tag { color: #032f62; }
+#mdEditor #wmd-preview .hljs-comment { color: #6a737d; }
+#mdEditor #wmd-preview .hljs-number,
+#mdEditor #wmd-preview .hljs-literal { color: #005cc5; }
+#mdEditor #wmd-preview .hljs-function,
+#mdEditor #wmd-preview .hljs-title { color: #6f42c1; }
+#mdEditor #wmd-preview .hljs-built_in,
+#mdEditor #wmd-preview .hljs-title.class_ { color: #6f42c1; }
+#mdEditor #wmd-preview .hljs-params { color: #24292e; }
+#mdEditor #wmd-preview .hljs-variable,
+#mdEditor #wmd-preview .hljs-name { color: #e36209; }
+#mdEditor #wmd-preview .hljs-regexp { color: #032f62; }
+#mdEditor #wmd-preview .hljs-meta { color: #005cc5; }
+#mdEditor #wmd-preview .hljs-tag { color: #22863a; }
+#mdEditor #wmd-preview .hljs-attr { color: #6f42c1; }
+#mdEditor #wmd-preview .hljs-selector-id,
+#mdEditor #wmd-preview .hljs-selector-class { color: #6f42c1; }
+#mdEditor #wmd-preview .hljs-emphasis { font-style: italic; }
+#mdEditor #wmd-preview .hljs-strong { font-weight: bold; }
+
+/* Inline code */
+#mdEditor #wmd-preview code:not(pre code) {
+  padding: 2px 6px;
+  background: rgba(175, 184, 193, 0.2);
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: Menlo, Monaco, Consolas, "Courier New", monospace;
+}
+
+/* Blockquotes */
 #mdEditor #wmd-preview blockquote {
   margin: 10px 0;
-  padding: 6px 12px;
+  padding: 6px 16px;
   border-left: 4px solid #ddd;
   color: #666;
+}
+
+#mdEditor #wmd-preview blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Tables */
+#mdEditor #wmd-preview table {
+  border-collapse: collapse;
+  margin: 10px 0;
+  width: 100%;
+}
+
+#mdEditor #wmd-preview table th,
+#mdEditor #wmd-preview table td {
+  border: 1px solid #ddd;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+#mdEditor #wmd-preview table th {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+#mdEditor #wmd-preview table tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+/* Task lists */
+#mdEditor #wmd-preview ul.task-list {
+  list-style: none;
+  padding-left: 6px;
+}
+
+#mdEditor #wmd-preview ul.task-list li {
+  margin: 2px 0;
+}
+
+#mdEditor #wmd-preview .task-list-item-checkbox {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+/* Footnotes */
+#mdEditor #wmd-preview .footnote-ref {
+  font-size: 0.85em;
+  vertical-align: super;
+  text-decoration: none;
+}
+
+#mdEditor #wmd-preview .footnote-item p {
+  display: inline;
+}
+
+#mdEditor #wmd-preview hr.footnotes-sep {
+  margin-top: 24px;
+  border: 0;
+  border-top: 1px solid #ddd;
+}
+
+/* Horizontal rules */
+#mdEditor #wmd-preview hr {
+  border: 0;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
+}
+
+/* Mark highlighting */
+#mdEditor #wmd-preview mark {
+  background: #fff3b0;
+  padding: 1px 2px;
+}
+
+/* Twemoji inline images */
+#mdEditor #wmd-preview img.emoji {
+  height: 1.1em;
+  width: 1.1em;
+  margin: 0 .05em 0 .1em;
+  vertical-align: -0.15em;
+  display: inline;
 }
