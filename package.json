@@ -1,7 +1,19 @@
 {
   "name": "Leanote-Desktop",
   "version": "1.0.0",
+  "description": "Leanote Desktop - Not Just A Notepad",
+  "author": "Leanote <leanote@gmail.com>",
   "main": "main.js",
+  "scripts": {
+    "start": "electron . --no-sandbox --disable-gpu --in-process-gpu",
+    "start:dev": "electron . --devtools --no-sandbox --disable-gpu --in-process-gpu",
+    "build:less": "bash build.sh less-only",
+    "build:icons": "bash build.sh icons",
+    "build:linux": "bash build.sh linux",
+    "build:win": "bash build.sh win",
+    "build:android": "bash build.sh android",
+    "build:ios": "bash build.sh ios"
+  },
   "dependencies": {
     "@electron/remote": "^2.0.10",
     "adm-zip": ">=0.4.11",
@@ -23,6 +35,8 @@
     "xml2js": "0.4.6"
   },
   "devDependencies": {
-    "electron": "^20.3.12"
+    "electron": "^20.3.12",
+    "electron-builder": "^26.8.1",
+    "less": "^4.6.4"
   }
 }

@@ -31,6 +31,10 @@ The night theme had several white background issues fixed in `public/themes/them
 
 Removed the `window.Service = window.loadService()` call in note.html. Service is already initialized as a global by service.js script tag; `loadService` was only exposed by preload.js which is not in use.
 
+### Emoji icon size in markdown preview
+
+twemoji renders emoji as `<img class="emoji">` tags at full resolution. Without CSS constraints, emoji appear enormous in the preview panel. Fixed by adding `img.emoji { height: 1.1em; width: 1.1em; }` to `modern-markdown.css`.
+
 ## Commands
 
 ```bash
@@ -64,6 +68,39 @@ done
 # Tests (no formal test runner; run individually)
 node tests/test.js
 ```
+
+### Build & Packaging
+
+```bash
+# Compile LESS only (no packaging)
+./build.sh less-only
+
+# Generate PNG icons from .ico for Linux
+./build.sh icons
+
+# Build Linux .deb package (Ubuntu 22.04, amd64)
+./build.sh linux
+
+# Build Windows .exe installer (NSIS)
+./build.sh win
+
+# Build Android APK via Capacitor (requires Android SDK)
+./build.sh android
+
+# Build iOS app via Capacitor (requires macOS + Xcode)
+./build.sh ios
+
+# npm script shortcuts
+npm run build:linux
+npm run build:win
+npm run build:android
+npm run build:ios
+npm run build:less
+```
+
+Output: `dist/` directory (e.g., `dist/Leanote-Desktop_1.0.0_amd64.deb`).
+
+The build script auto-downloads Electron and electron-builder binaries from npmmirror.com (Chinese mirror). Override with `ELECTRON_MIRROR` and `ELECTRON_BUILDER_BINARIES_MIRROR` env vars.
 
 If `require('electron')` returns the wrong object, use a clean environment:
 ```bash
@@ -144,6 +181,14 @@ Plugin config in `public/config.js`. Available: `theme`, `import_*`, `export_*`,
 ### Data Storage
 
 NeDB files in `<appData>/leanote/nedb55/<userId>/`. Collections: `users`, `g` (global), `notebooks`, `notes`, `tags`, `attachs`, `noteHistories`, `images`.
+
+### Build & Packaging
+
+- **`build.sh`** — Main build script. Compiles LESS, generates icons, packages for each platform.
+- **`electron-builder.yml`** — electron-builder configuration. Linux: .deb, Windows: NSIS .exe.
+- **`build/icons/`** — PNG icons (16-256px) extracted from `.ico` for Linux desktop integration.
+- **`package.json`** — Contains `build` section for electron-builder, npm scripts for each platform.
+- **Capacitor** (Android/iOS): Requires `npx cap add android/ios`. Mobile needs a web bundling step (webpack/vite) + adapter modules since the app uses Node.js in renderer.
 
 ### Markdown Rendering
 
