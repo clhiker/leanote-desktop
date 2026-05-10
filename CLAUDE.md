@@ -45,12 +45,20 @@ npm i
 cd dev && npm i
 
 # Compile LESS themes (required before first run)
+# Option 1: One-shot compile via build script (recommended)
+./build.sh less-only
+
+# Option 2: Watch mode for development (auto-recompile on changes)
+cd dev && npx gulp dev
+
+# Option 3: Manual compile (individual files)
 cd dev && npx lessc ../public/themes/default.less ../public/themes/default.css
 cd dev && npx lessc ../public/themes/basic.less ../public/themes/basic.css
 cd dev && npx lessc ../public/themes/presentation.less ../public/themes/presentation.css
 cd dev && npx lessc ../public/themes/writting.less ../public/themes/writting.css
 cd dev && npx lessc ../public/themes/windows.less ../public/themes/windows.css
 cd dev && npx lessc ../public/css/login.less ../public/css/login.css
+cd dev && npx lessc ../public/themes/markdown/meditor.less ../public/themes/markdown/meditor.css
 
 # Compile color themes
 cd dev && for dir in ../public/themes/themes/*/; do
@@ -67,6 +75,10 @@ done
 
 # Tests (no formal test runner; run individually)
 node tests/test.js
+node tests/testCommon.js
+node tests/testNeedle.js
+node tests/test_fs.js
+node tests/test_getmac.js
 ```
 
 ### Build & Packaging
@@ -115,7 +127,7 @@ env -i HOME=$HOME DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
 
 - **Main process** (`main.js`): Creates BrowserWindow, manages IPC, runs NeDB proxy server, registers `leanote://` custom protocol. Debug flag: `--devtools`.
 - **Renderer process** (`login.html` / `note.html`): Runs with `nodeIntegration: true`, `contextIsolation: false`. Loads services via `<script>` tags, not bundled.
-- **Preload** (`preload.js`): Uses `contextBridge` to expose `loadService()` and `api.getLocale()` to `window`. Only used for `note.html`.
+- **Preload** (`preload.js`): Defined but **not effective** — `contextIsolation: false` means the contextBridge is bypassed. The preload imports `./src/browser/service` and exposes it via `loadService()`, but the renderer loads services directly via `<script>` tags instead.
 
 ### Service Loading
 
@@ -134,6 +146,21 @@ Services are loaded via `<script>` tags in the HTML files. The `require()` paths
    - If active user exists → loads main UI (notebooks, notes, tags)
    - If no active user → calls `switchAccount()` → `toLogin()` → IPC `openUrl` to open `login.html`
 4. User logs in via `login.html` → `goToMainPage()` → IPC `openUrl` to open `note.html`
+
+### IPC Channels
+
+**Renderer → Main:**
+- `db-exec` — Execute NeDB operation (method, dbname, params)
+- `db-init` — Initialize main process NeDB with user context and paths
+- `openUrl` — Open a new HTML page (login.html or note.html)
+- `quit-app` — Signal main process to quit
+- `show-tray` — Create system tray icon (macOS/Windows only)
+
+**Main → Renderer:**
+- `db-exec-ret` — Return value from NeDB operation
+- `focusWindow` — Window gained focus
+- `blurWindow` — Window lost focus
+- `closeWindow` — Window is being closed
 
 ### IPC-based Database Proxy
 
@@ -158,6 +185,7 @@ NeDB operations are split across processes:
 | `src/import.js` | Import from Evernote (ENEX), HTML, Leanote formats |
 | `src/gui.js` | Wraps `@electron/remote` APIs (Menu, dialog, Shell) |
 | `src/leanote_protocol.js` | Custom protocol for serving local files |
+| `src/pdf_main.js` | PDF export functionality (main process side) |
 
 ### Frontend UI (`public/js/app/`)
 
@@ -176,7 +204,7 @@ Plugins use RequireJS (AMD modules) in `public/plugins/<name>/`. Each has:
 - `plugin.js` — AMD module with `langs`, `init()`, `onOpen()`, `onOpenAfter()` lifecycle hooks
 - `plugin.json` — metadata and language strings
 
-Plugin config in `public/config.js`. Available: `theme`, `import_*`, `export_*`, `langs`, `accounts`, `md_theme`, `template`.
+Plugin config in `public/config.js`. Default plugins: `theme`, `import_leanote`, `import_evernote`, `import_html`, `export_pdf`, `export_html`, `export_leanote`, `export_evernote`, `langs`, `accounts`. Default theme: `grass`, default view: `snippet`.
 
 ### Data Storage
 
@@ -184,8 +212,8 @@ NeDB files in `<appData>/leanote/nedb55/<userId>/`. Collections: `users`, `g` (g
 
 ### Build & Packaging
 
-- **`build.sh`** — Main build script. Compiles LESS, generates icons, packages for each platform.
-- **`electron-builder.yml`** — electron-builder configuration. Linux: .deb, Windows: NSIS .exe.
+- **`build.sh`** — Main build script. Compiles LESS (including markdown themes), generates icons, packages for each platform.
+- **`electron-builder.yml`** — electron-builder configuration. Linux: .deb, Windows: NSIS .exe, Mac: .dmg (x64 + arm64). Uses ASAR archive.
 - **`build/icons/`** — PNG icons (16-256px) extracted from `.ico` for Linux desktop integration.
 - **`package.json`** — Contains `build` section for electron-builder, npm scripts for each platform.
 - **Capacitor** (Android/iOS): Requires `npx cap add android/ios`. Mobile needs a web bundling step (webpack/vite) + adapter modules since the app uses Node.js in renderer.
