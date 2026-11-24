@@ -603,90 +603,54 @@ const Note = {
 	// noteId是本地Id
 	inSyncContent: {}, // 正在同步中的
 	inSyncTimes: {}, // 10次就要再尝试了
-	getNoteContent: function (noteId, callback) {
+		getNoteContent: async function (noteId, callback) {
 		const me = this;
-		// console.trace('getNoteContent------' + noteId);
-		// 如果是正在sync的话, 返回
-		/*
-		if(me.inSyncContent[noteId]) {
-			console.log('in sync now' + noteId); // 下周分享 node-webkit
-			return;
-		}
-		*/
 		me.inSyncContent[noteId] = true;
-		if (!me.inSyncTimes[noteId]) {
-			me.inSyncTimes[noteId] = 0
-		}
-		me.inSyncTimes[noteId]++;
+		me.inSyncTimes[noteId] = (me.inSyncTimes[noteId] || 0) + 1;
 		if (me.inSyncTimes[noteId] >= 5) {
 			return callback && callback(false);
 		}
 
-		me.getNote(noteId, function (note) {
+		const note = await new Promise(resolve => me.getNote(noteId, resolve));
+		if (!Common.isOk(note)) {
+			me.inSyncContent[noteId] = false;
+			console.log('not ok');
+			console.log(note);
+			return callback && callback(false);
+		}
+		if (!note.InitSync) {
+			me.inSyncContent[noteId] = false;
+			return callback && callback(note);
+		}
 
-			if (!Common.isOk(note)) {
-				me.inSyncContent[noteId] = false;
-				console.log('not ok');
-				console.log(note);
-				callback && callback(false);
-			} else {
-				// 如果笔记是刚同步过来的, 那么内容要重新获取
-				if (note.InitSync) {
-					console.log('need load from server');
+		console.log('need load from server');
+		if (!Api) {
+			Api = require('./api');
+		}
+		const serverNoteId = note.ServerNoteId;
+		if (!serverNoteId) {
+			console.error(noteId + ' getServerNoteIdByNoteId error');
+			me.inSyncContent[noteId] = false;
+			return callback && callback(false);
+		}
 
-					if (!Api) {
-						Api = require('./api')
-					}
-
-					const serverNoteId = note.ServerNoteId;
-
-					// 远程获取
-					// me.getServerNoteIdByNoteId(noteId, function(serverNoteId) {
-					if (!serverNoteId) {
-						console.error(noteId + ' getServerNoteIdByNoteId error');
-						me.inSyncContent[noteId] = false;
-						return callback && callback(false);
-					}
-
-					Api.getNoteContent(serverNoteId, function (noteContent, ret) {
-						me.inSyncContent[noteId] = false;
-
-						// 同步到本地
-						if (Common.isOk(noteContent)) {
-							me.updateNoteContentForce(noteId, noteContent.Content, function (content) {
-								noteContent.Content = content;
-								noteContent.NoteId = noteId;
-								callback && callback(noteContent);
-							});
-						} else {
-							// 没有登录或者需要升级
-							try {
-								if (ret.Ok === false) { // {"Ok":false,"Msg":"NOTLOGIN"}
-									console.error(ret)
-									return callback && callback(false)
-								}
-							} catch (e) {
-							}
-							console.error(noteId + ' api.getNoteContent error');
-
-							// 这里, 可能太多的要同步了
-							setTimeout(function () {
-								me.getNoteContent(noteId, callback);
-							}, 500);
-
-							// callback && callback(false);
-						}
-					});
-
-					// });
-				} else {
-					me.inSyncContent[noteId] = false;
-					// console.log('not need');
-					callback && callback(note);
-					// Web.alertWeb("NONO");
-				}
+		const result = await new Promise(resolve => Api.getNoteContent(serverNoteId, (noteContent, ret) => resolve({noteContent, ret})));
+		me.inSyncContent[noteId] = false;
+		if (Common.isOk(result.noteContent)) {
+			const content = await new Promise(resolve => me.updateNoteContentForce(noteId, result.noteContent.Content, resolve));
+			result.noteContent.Content = content;
+			result.noteContent.NoteId = noteId;
+			return callback && callback(result.noteContent);
+		}
+		try {
+			if (result.ret.Ok === false) {
+				console.error(result.ret);
+				return callback && callback(false);
 			}
-		});
+		} catch (e) {
+		}
+		console.error(noteId + ' api.getNoteContent error');
+		setTimeout(() => me.getNoteContent(noteId, callback), 500);
 	},
 
 	//----------------
