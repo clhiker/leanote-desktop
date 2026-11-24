@@ -1,0 +1,29 @@
+@import "../night/theme.css";
+
+:root {
+  --night-note-bg: rgba(238,232,213,1);
+  --night-note-bg-opacity: rgba(238,232,213, 0.96);
+  --night-note-bg-less: rgba(253,246,227,1);
+  --night-note-bg-less-deep: rgba(253,246,227,1);
+  --night-note-bg-deep: #000;
+  --night-txtcolor: #93a1a1;
+  --night-txt-color-an: #586e75;
+  --night-item-hover-bg: rgba(60,60,60,1);
+  --night-item-active-bg: #868B87;
+  --night-left-notebook-color: #3C3C3C;
+}
+
+/* 稍浅 */
+
+ /* rgba(196,196,196,1); */
+
+.folderHeader .fa-left,
+.folderHeader span {
+  color: var(--night-left-notebook-color);
+}
+#addNotebookPlus {
+  color: var(--night-txtcolor);
+}
+#searchNotebookForList {
+  background: rgba(202, 189, 151, 0.5);
+}
