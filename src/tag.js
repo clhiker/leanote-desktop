@@ -1,8 +1,8 @@
 var db = require('./db');
 var Common = require('./common');
 var User = require('./user');
-// var Note = require('./note');
 var Web = require('./web');
+const p = require('./promise_util');
 // var Tags = db.tags;
 /*
 TagId
@@ -19,57 +19,42 @@ Count 笔记数
 var Tag = {
 
 	// 添加或更新标签
-	addOrUpdateTag: function(title, callback, isForce, usn) {
-		var userId = User.getCurActiveUserId();
-		db.tags.findOne({UserId: userId, Tag: title}, function(err, tag) {
-			// 存在, 则更新该tag下的笔记数量
+	addOrUpdateTag: async function(title, callback, isForce, usn) {
+		const userId = User.getCurActiveUserId();
+		const tag = await p(db.tags, 'findOne', {UserId: userId, Tag: title}).catch(() => null);
+		if (tag) {
 			// 已存的, 不更新IsDirty
-			var Note = require('./note');
-			if(!err && tag) {
-				// Note.countNoteByTag(title, function(cnt) {
-					// tag.Count = cnt;
-					// LocalIsDelete变为false, 可能之前删除了, 后来又重新添加了
-					// {Tag: title}, 之前是 {Title: title}
-					db.tags.update({UserId: userId, Tag: title}, {$set: {UpdatedTime: new Date(), LocalIsDelete: false, IsDirty: true}}, function() {
-						console.log('已存在tag ' + title);
-						callback(tag);
-					});
-				// });
-			} else {
-				var date = new Date();
-				db.tags.insert({
-					TagId: Common.objectId(), 
-					UserId: userId, 
-					Tag: title, 
-					IsDirty: !isForce, // 新添加的
-					Usn: usn, // 在isForce == true时用, 服务器添加过来的
-					Count: 1,
-					LocalIsDelete: false,
-					CreatedTime: date,
-					UpdatedTime: date
-				}, function(err, doc) {
-					if(err) {
-						callback && callback({Ok: false, Inserted: false});
-					} else {
-						callback && callback(doc);
-					}
-				});
-			}
-		});
+			await p(db.tags, 'update', {UserId: userId, Tag: title}, {$set: {UpdatedTime: new Date(), LocalIsDelete: false, IsDirty: true}}).catch(() => {});
+			console.log('已存在tag ' + title);
+			return callback && callback(tag);
+		}
+		const date = new Date();
+		try {
+			const doc = await p(db.tags, 'insert', {
+				TagId: Common.objectId(),
+				UserId: userId,
+				Tag: title,
+				IsDirty: !isForce, // 新添加的
+				Usn: usn, // 在isForce == true时用, 服务器添加过来的
+				Count: 1,
+				LocalIsDelete: false,
+				CreatedTime: date,
+				UpdatedTime: date
+			});
+			callback && callback(doc);
+		} catch (e) {
+			callback && callback({Ok: false, Inserted: false});
+		}
 	},
 
-	getTags: function(callback) {
-		db.tags.find({UserId: User.getCurActiveUserId(), LocalIsDelete: false}, function(err, tags) {
-			if(err) {
-				callback && callback(false);
-			} else {
-				// 排序, 用UpdatedTime来排序
-				tags.sort(function (a, b) {
-					return a.UpdatedTime < b.UpdatedTime;
-				});
-				callback && callback(tags);
-			}
-		});
+	getTags: async function(callback) {
+		try {
+			const tags = await p(db.tags, 'find', {UserId: User.getCurActiveUserId(), LocalIsDelete: false});
+			tags.sort((a, b) => a.UpdatedTime < b.UpdatedTime);
+			callback && callback(tags);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 
 	// 删除标签, 更新为LocaleIsDelete = true
@@ -106,14 +91,13 @@ var Tag = {
 		Web.updateTagCount({Tag: title, Count: count});
 	},
 
-	getTag: function(title, callback) {
-		var userId = User.getCurActiveUserId();
-		db.tags.findOne({UserId: userId, Tag: title}, function(err, tag) {
-			if(err || !tag) {
-				return callback && callback(false);
-			}
-			callback && callback(tag);
-		});
+	getTag: async function(title, callback) {
+		try {
+			const tag = await p(db.tags, 'findOne', {UserId: User.getCurActiveUserId(), Tag: title});
+			callback && callback(tag || false);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 
 
@@ -134,15 +118,13 @@ var Tag = {
 	},
 
 	// send changes to server
-	getDirtyTags: function(callback) {
-		var me = this;
-		userId = User.getCurActiveUserId();
-		db.tags.find({UserId: userId, IsDirty: true}, function(err, tags) {
-			if(err || !tags) {
-				return callback && callback(false);
-			}
-			callback && callback(tags);
-		});
+	getDirtyTags: async function(callback) {
+		try {
+			const tags = await p(db.tags, 'find', {UserId: User.getCurActiveUserId(), IsDirty: true});
+			callback && callback(tags || false);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 };
 module.exports = Tag;
