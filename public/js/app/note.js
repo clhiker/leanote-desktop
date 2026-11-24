@@ -151,6 +151,10 @@ Note.setNotesSorter = function (sortType) {
 	Api.writeConfig(Config);
 };
 
+Note.getTargetNoteIds = function (target) {
+    return Note.inBatch ? Note.getBatchNoteIds() : [$(target).attr("noteId")];
+};
+
 // render前先排序
 Note.sortNotes = function (notes) {
 	if (isEmpty(notes)) {
@@ -163,59 +167,23 @@ Note.sortNotes = function (notes) {
 
     // 排序之
     notes.sort(function(a, b) {
-        const t1 = a[sortBy];
-        const t2 = b[sortBy];
-
-        if (isAsc) {
-            if (t1 < t2) {
-                return -1;
-            } else if (t1 > t2) {
-                return 1;
-            }
-        } else {
-            if (t1 < t2) {
-                return 1;
-            } else if (t1 > t2) {
-                return -1;
-            }
-        }
-        return 0;
+        const d = a[sortBy] > b[sortBy] ? 1 : a[sortBy] < b[sortBy] ? -1 : 0;
+        return isAsc ? d : -d;
     });
 };
 
+const SORTERS = {
+    dateCreatedASC: ['CreatedTime', true],
+    dateCreatedDESC: ['CreatedTime', false],
+    dateUpdatedASC: ['UpdatedTime', true],
+    dateUpdatedDESC: ['UpdatedTime', false],
+    titleASC: ['Title', true],
+    titleDESC: ['Title', false]
+};
+
 Note.getSorterAndOrder = function () {
-    let sortBy = "UpdatedTime";
-    let isAsc = false; // 默认是降序
-    if (Config.sortType) {
-    	switch(Config.sortType) {
-    		case 'dateCreatedASC':
-    			sortBy = 'CreatedTime';
-    			isAsc = true;
-    			break;
-    		case 'dateCreatedDESC':
-    			sortBy = 'CreatedTime';
-    			isAsc = false;
-    			break;
-    		case 'dateUpdatedASC':
-    			sortBy = 'UpdatedTime';
-    			isAsc = true;
-    			break;
-    		case 'dateUpdatedDESC':
-    			sortBy = 'UpdatedTime';
-    			isAsc = false;
-    			break;
-    		case 'titleASC':
-    			sortBy = 'Title';
-    			isAsc = true;
-    			break;
-    		case 'titleDESC':
-    			sortBy = 'Title';
-    			isAsc = false;
-    			break;
-    	}
-    }
-    console.log({sortBy: sortBy, isAsc: isAsc});
-    return {sortBy: sortBy, isAsc: isAsc};
+    const [sortBy, isAsc] = SORTERS[Config.sortType] || ['UpdatedTime', false];
+    return {sortBy, isAsc};
 };
 
 // 得到notebook下的notes, 按什么排序 updatedTime?
@@ -1703,12 +1671,7 @@ Note.setAllNoteBlogStatus = function(notebookId, isBlog) {
 Note.moveNote = function(target, data) {
     const me = Note;
     // 批量操作
-    let noteIds;
-    if (Note.inBatch) {
-        noteIds = me.getBatchNoteIds();
-    } else {
-        noteIds = [$(target).attr('noteId')];
-    }
+    const noteIds = Note.getTargetNoteIds(target);
 
     // 当前在该笔记本下
     const toNotebookId = data.notebookId;
@@ -1782,12 +1745,7 @@ Note.copyNote = function(target, data, isShared) {
     const me = Note;
 
     const toNotebookId = data.notebookId;
-    let noteIds;
-    if (Note.inBatch) {
-        noteIds = me.getBatchNoteIds();
-    } else {
-        noteIds = [$(target).attr('noteId')];
-    }
+    const noteIds = Note.getTargetNoteIds(target);
 
     // 得到需要复制的
     const needNoteIds = [];
@@ -2422,29 +2380,17 @@ Note.initContextmenu = function() {
         // 导出
         const exportsSubMenus = new gui.Menu();
         const exportMenus = Api.getExportMenus() || [];
-        for (var i = 0; i < exportMenus.length; ++i) {
-            (function(j) {
-
-                const menu = exportMenus[j];
-                const clickBac = menu.click;
-
-                const menuItem = new gui.MenuItem({
-                    label: menu.label,
-                    click: function (e) {
-                        if (Note.inBatch) {
-                            var noteIds = Note.getBatchNoteIds();
-                        } else {
-                            var noteIds = [$(self.target).attr('noteId')];
-                        }
-                        // var note = Note.getNote();
-                        clickBac && clickBac(noteIds);
-                    }
-                });
-
-                exportMenus[i].menu = menuItem;
-
-                exportsSubMenus.append(menuItem);
-            })(i);
+        for (let i = 0; i < exportMenus.length; ++i) {
+            const menu = exportMenus[i];
+            const clickBac = menu.click;
+            const menuItem = new gui.MenuItem({
+                label: menu.label,
+                click: function (e) {
+                    clickBac && clickBac(Note.getTargetNoteIds(self.target));
+                }
+            });
+            menu.menu = menuItem;
+            exportsSubMenus.append(menuItem);
         }
 
         if (exportMenus.length > 0) {
@@ -2464,12 +2410,7 @@ Note.initContextmenu = function() {
             // 控制disable
         this.popup = function(e, target) {
             self.target = target;
-            let noteIds;
-            if (Note.inBatch) {
-                noteIds = Note.getBatchNoteIds();
-            } else {
-                noteIds = [$(target).attr("noteId")];
-            }
+            const noteIds = Note.getTargetNoteIds(target);
 
             // 导出的enabled
             for (let i = 0; i < exportMenus.length; ++i) {
@@ -3221,73 +3162,31 @@ $(function() {
     // 切换列表视图
     $("#viewModeDropdown").click(function() {
         const noteViewMenus = new gui.Menu();
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.view === "snippet",
-            label: Api.getMsg("Snippet View"),
+        const viewItem = (view, label) => ({
+            checked: Config.view === view,
+            label: Api.getMsg(label),
             type: "checkbox",
-            click: function() {
-                Note.switchView('snippet');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.view === "list",
-            label: Api.getMsg("List View"),
+            click: () => Note.switchView(view)
+        });
+        const sortItem = (type, label) => ({
+            checked: type === 'dateUpdatedDESC' ? (!Config.sortType || Config.sortType === type) : Config.sortType === type,
+            label: Api.getMsg(label),
             type: "checkbox",
-            click: function() {
-                Note.switchView('list');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({type: "separator"}));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.sortType === "dateCreatedASC",
-            label: Api.getMsg("Date Created - ASC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('dateCreatedASC');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.sortType === "dateCreatedDESC",
-            label: Api.getMsg("Date Created - DESC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('dateCreatedDESC');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({type: "separator"}));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.sortType === "dateUpdatedASC",
-            label: Api.getMsg("Date Updated - ASC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('dateUpdatedASC');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: !Config.sortType || Config.sortType === "dateUpdatedDESC",
-            label: Api.getMsg("Date Updated - DESC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('dateUpdatedDESC');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({type: "separator"}));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.sortType === "titleASC",
-            label: Api.getMsg("Title - ASC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('titleASC');
-            }
-        }));
-        noteViewMenus.append(new gui.MenuItem({
-            checked: Config.sortType === "titleDESC",
-            label: Api.getMsg("Title - DESC"),
-            type: "checkbox",
-            click: function() {
-            	Note.setNotesSorter('titleDESC');
-            }
-        }));
+            click: () => Note.setNotesSorter(type)
+        });
+        [
+            viewItem('snippet', 'Snippet View'),
+            viewItem('list', 'List View'),
+            null,
+            sortItem('dateCreatedASC', 'Date Created - ASC'),
+            sortItem('dateCreatedDESC', 'Date Created - DESC'),
+            null,
+            sortItem('dateUpdatedASC', 'Date Updated - ASC'),
+            sortItem('dateUpdatedDESC', 'Date Updated - DESC'),
+            null,
+            sortItem('titleASC', 'Title - ASC'),
+            sortItem('titleDESC', 'Title - DESC')
+        ].forEach(item => noteViewMenus.append(new gui.MenuItem(item || {type: "separator"})));
 
         const $this = $(this);
         const x = $this.offset().left;
