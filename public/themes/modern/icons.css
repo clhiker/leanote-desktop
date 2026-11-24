@@ -1,1 +1,145 @@
-/* Modern SVG icon layer. Filled in Phase 7. */
+/* Local SVG icons for the modern app chrome. User note HTML keeps Font Awesome. */
+
+html.ui-modern :is(
+    #leftNotebook,
+    #noteList,
+    #notebookList,
+    #notesAndSort,
+    #searchNote,
+    #noteItemListWrap,
+    #tool,
+    #editorTool,
+    #noteTitleDiv,
+    #editorBottom,
+    #tagNav,
+    #tagInputBox,
+    #mceToolbar,
+    #editorMaskBtns,
+    #myProfile,
+    #attachMenu,
+    #notify,
+    #batchMask,
+    #presentation,
+    #leanoteDialog,
+    #editorDialog,
+    #upgradeDialog,
+    #localAccountDialog,
+    #loadingDialog,
+    #accountsDialog,
+    #importLeanoteDialog,
+    #importHTMLDialog,
+    #importEvernoteDialog,
+    #leanoteNav,
+    #mdEditor .navbar,
+    #mdEditor .layout-toggler,
+    #mdEditor .leanoteNav,
+    #wmd-button-bar
+) .fa::before,
+html.ui-modern #editBtn span::before,
+html.ui-modern span.tmpzTreeMove_arrow::before {
+    content: "";
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    line-height: 1;
+    vertical-align: -0.125em;
+    background-color: currentColor;
+    -webkit-mask-image: var(--m-icon, none);
+    mask-image: var(--m-icon, none);
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+}
+
+html.ui-modern .fa-adjust { --m-icon: url("../../icons/ui/adjust.svg"); }
+html.ui-modern .fa-align-justify { --m-icon: url("../../icons/ui/nav.svg"); }
+html.ui-modern .fa-angle-down { --m-icon: url("../../icons/ui/chevron-down.svg"); }
+html.ui-modern .fa-angle-right { --m-icon: url("../../icons/ui/chevron-right.svg"); }
+html.ui-modern .fa-angle-left { --m-icon: url("../../icons/ui/chevron-left.svg"); }
+html.ui-modern .fa-angle-up { --m-icon: url("../../icons/ui/chevron-up.svg"); }
+html.ui-modern .fa-arrow-right { --m-icon: url("../../icons/ui/arrow-right.svg"); }
+html.ui-modern .fa-bold { --m-icon: url("../../icons/ui/bold.svg"); }
+html.ui-modern .fa-book { --m-icon: url("../../icons/ui/book.svg"); }
+html.ui-modern .fa-bookmark { --m-icon: url("../../icons/ui/bookmark-filled.svg"); }
+html.ui-modern .fa-bookmark-o { --m-icon: url("../../icons/ui/bookmark.svg"); }
+html.ui-modern .fa-bug { --m-icon: url("../../icons/ui/bug.svg"); }
+html.ui-modern .fa-clock-o { --m-icon: url("../../icons/ui/clock.svg"); }
+html.ui-modern .fa-cog { --m-icon: url("../../icons/ui/settings.svg"); }
+html.ui-modern .fa-compress { --m-icon: url("../../icons/ui/compress.svg"); }
+html.ui-modern .fa-download { --m-icon: url("../../icons/ui/download.svg"); }
+html.ui-modern .fa-exclamation-triangle,
+html.ui-modern .fa-warning { --m-icon: url("../../icons/ui/warning.svg"); }
+html.ui-modern .fa-expand { --m-icon: url("../../icons/ui/expand.svg"); }
+html.ui-modern .fa-file-o { --m-icon: url("../../icons/ui/file.svg"); }
+html.ui-modern .fa-font { --m-icon: url("../../icons/ui/text.svg"); }
+html.ui-modern .fa-history { --m-icon: url("../../icons/ui/history.svg"); }
+html.ui-modern .fa-link { --m-icon: url("../../icons/ui/link.svg"); }
+html.ui-modern .fa-long-arrow-down { --m-icon: url("../../icons/ui/arrow-down-long.svg"); }
+html.ui-modern .fa-long-arrow-up { --m-icon: url("../../icons/ui/arrow-up-long.svg"); }
+html.ui-modern .fa-paperclip { --m-icon: url("../../icons/ui/paperclip.svg"); }
+html.ui-modern .fa-plus { --m-icon: url("../../icons/ui/plus.svg"); }
+html.ui-modern .fa-question-circle { --m-icon: url("../../icons/ui/help.svg"); }
+html.ui-modern .fa-refresh { --m-icon: url("../../icons/ui/refresh.svg"); }
+html.ui-modern .fa-remove { --m-icon: url("../../icons/ui/close.svg"); }
+html.ui-modern .fa-star-o { --m-icon: url("../../icons/ui/star.svg"); }
+html.ui-modern .fa-th-list { --m-icon: url("../../icons/ui/list.svg"); }
+html.ui-modern .fa-trash-o { --m-icon: url("../../icons/ui/trash.svg"); }
+html.ui-modern .fa-upload { --m-icon: url("../../icons/ui/upload.svg"); }
+
+/* state-dependent icons */
+html.ui-modern .item-is-star .item-star .fa {
+    --m-icon: url("../../icons/ui/star-filled.svg");
+}
+
+html.ui-modern .notebook-setting {
+    --m-icon: url("../../icons/ui/settings.svg");
+}
+
+html.ui-modern #editBtn span {
+    --m-icon: url("../../icons/ui/eye.svg");
+}
+
+html.ui-modern .read-only-editor #editBtn span {
+    --m-icon: url("../../icons/ui/pen.svg");
+}
+
+html.ui-modern .more-fa {
+    --m-icon: url("../../icons/ui/chevron-down.svg");
+}
+
+html.ui-modern #editor.all-tool .more-fa {
+    --m-icon: url("../../icons/ui/chevron-up.svg");
+}
+
+html.ui-modern .noline_open {
+    --m-icon: url("../../icons/ui/chevron-down.svg");
+}
+
+html.ui-modern .noline_close {
+    --m-icon: url("../../icons/ui/chevron-right.svg");
+}
+
+html.ui-modern .layout-toggler-preview.open > i {
+    --m-icon: url("../../icons/ui/chevron-right.svg");
+}
+
+html.ui-modern .layout-toggler-preview:not(.open) > i {
+    --m-icon: url("../../icons/ui/chevron-left.svg");
+}
+
+html.ui-modern span.tmpzTreeMove_arrow {
+    --m-icon: url("../../icons/ui/arrow-right.svg");
+}
+
+/* zTree 的叶子/默认节点本身没有图标，不要被通用 mask 变成方块 */
+html.ui-modern #notebookList .button[class*="ico_"]::before,
+html.ui-modern #notebookList .button.noline_docu::before {
+    content: none;
+    background: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+}
+
