@@ -22,8 +22,9 @@ const NPX = HOST === 'win32' ? 'npx.cmd' : 'npx';
 const DIST_ROOT = path.join(ROOT, 'dist');
 const APP_ID = 'com.leanote.mobile';
 
-process.env.ELECTRON_MIRROR = process.env.ELECTRON_MIRROR || 'https://npmmirror.com/mirrors/electron/';
-process.env.ELECTRON_BUILDER_BINARIES_MIRROR = process.env.ELECTRON_BUILDER_BINARIES_MIRROR || 'https://npmmirror.com/mirrors/electron-builder-binaries/';
+// 镜像仅在显式设置时生效；默认走官方源以便复用本地 Electron 缓存
+if (process.env.ELECTRON_MIRROR) process.env.ELECTRON_MIRROR = process.env.ELECTRON_MIRROR;
+if (process.env.ELECTRON_BUILDER_BINARIES_MIRROR) process.env.ELECTRON_BUILDER_BINARIES_MIRROR = process.env.ELECTRON_BUILDER_BINARIES_MIRROR;
 process.env.electron_config_cache = process.env.electron_config_cache || path.join(os.homedir(), '.cache/electron');
 
 const argv = process.argv.slice(2);
@@ -196,13 +197,21 @@ function planTargets(targets) {
   }
 }
 
+function builderEnvArgs() {
+  const args = [];
+  if (process.env.ELECTRON_DIST_PATH) {
+    args.push(`--config.electronDist=${process.env.ELECTRON_DIST_PATH}`);
+  }
+  return args;
+}
+
 function buildLinux() {
   const p = targetPlan('linux');
   if (!p.ok) return mark('linux', 'skipped', p.reason);
   const out = outDir('linux');
   ensureOut(out);
   run(NPX, ['electron-builder', '--linux', 'deb', '--x64', '--publish', 'never',
-    `--config.directories.output=${out}`]);
+    `--config.directories.output=${out}`, ...builderEnvArgs()]);
   mark('linux', 'built', '', out);
 }
 function buildWin() {
@@ -211,7 +220,7 @@ function buildWin() {
   const out = outDir('win');
   ensureOut(out);
   const args = ['electron-builder', '--win', 'nsis', '--x64', '--publish', 'never',
-    `--config.directories.output=${out}`];
+    `--config.directories.output=${out}`, ...builderEnvArgs()];
   if (p.degraded) args.push('--config.win.signAndEditExecutable=false');
   run(NPX, args);
   mark('win', 'built', '', out, !!p.degraded);
@@ -223,7 +232,7 @@ function buildMac() {
   ensureOut(out);
   const notify = notarizeEnabled();
   const args = ['electron-builder', '--mac', 'dmg', '--x64', '--arm64', '--publish', 'never',
-    `--config.directories.output=${out}`];
+    `--config.directories.output=${out}`, ...builderEnvArgs()];
   if (notify) args.push('--config.mac.notarize=true');
   run(NPX, args);
   mark('mac', 'built', '', out);
@@ -467,14 +476,30 @@ function artifactFiles() {
 function writeMetadata() {
   if (opts.noChecksums) return;
   const files = artifactFiles();
-  const artifacts = files.map(f => ({
-    platform: rel(f).split('/')[0],
-    file: path.relative(VERSION_DIR, f).split(path.sep).join('/'),
-    size: fs.statSync(f).size,
-    sha256: sha256(f),
-  }));
+  const artifacts = files.map(f => {
+    const relative = path.relative(VERSION_DIR, f).split(path.sep).join('/');
+    return {
+      platform: relative.split('/')[0],
+      file: relative,
+      size: fs.statSync(f).size,
+      sha256: sha256(f),
+    };
+  });
   const sums = artifacts.map(a => `${a.sha256}  ${a.file}`).join('\n') + (artifacts.length ? '\n' : '');
   const old = readJson(path.join(VERSION_DIR, 'release.json'), {});
+  const summarizeResults = list => list.map(t => ({
+    name: t.name,
+    status: t.status,
+    reason: t.reason || '',
+    output: t.output ? rel(t.output) : '',
+    degraded: !!t.degraded,
+  }));
+  const targetResults = results.length
+    ? summarizeResults(results)
+    : (old.targets || []).map(t => ({
+        ...t,
+        output: t.output ? (path.isAbsolute(t.output) ? rel(t.output) : t.output) : '',
+      }));
   const manifest = {
     name: pkg.name,
     productName: 'Leanote',
@@ -496,8 +521,8 @@ function writeMetadata() {
       android: androidSigning(),
       ios: iosSigning(),
     },
-    targets: results.length ? results : (old.targets || []),
-    degraded: (results.length ? results : (old.targets || [])).filter(t => t.degraded).map(t => `${t.name}:degraded`),
+    targets: targetResults,
+    degraded: targetResults.filter(t => t.degraded).map(t => `${t.name}:degraded`),
     artifacts,
   };
   if (opts.dryRun) { log('DRY  write SHA256SUMS / release.json'); return; }
