@@ -31,33 +31,82 @@ $> npm start
 $> ./node_modules/electron/dist/electron . --no-sandbox --disable-gpu --in-process-gpu
 ```
 
-### 3. Build & Package
+### 3. Build & Release
+
+统一入口是 `scripts/release.mjs`，`./build.sh` 仍保留为兼容包装。
 
 ```shell
-# Linux .deb (Ubuntu 22.04, amd64)
-$> ./build.sh linux
+# 检查当前宿主能构建哪些平台（不写文件）
+$> node scripts/release.mjs check
+$> node scripts/release.mjs --dry-run all
 
-# Windows .exe (NSIS installer)
-$> ./build.sh win
+# 桌面
+$> node scripts/release.mjs linux
+$> node scripts/release.mjs win
+$> node scripts/release.mjs mac
 
-# Android APK (requires Android SDK)
-$> ./build.sh android
+# 移动端（Capacitor 壳，打开 Leanote server 网页版）
+$> npm run mobile:init
+$> node scripts/release.mjs android
+$> node scripts/release.mjs ios
 
-# iOS (requires macOS + Xcode)
-$> ./build.sh ios
-
-# Generate PNG icons from .ico
-$> ./build.sh icons
+# 当前宿主支持的全部目标
+$> node scripts/release.mjs all
+$> node scripts/release.mjs --strict all
 ```
 
-Output: `dist/` directory.
+产物统一归档到：
+
+```
+dist/<version>/
+  linux/Leanote-<version>-linux-amd64.deb
+  win/Leanote-<version>-win-x64-setup.exe
+  mac/Leanote-<version>-mac-{x64,arm64}.dmg
+  android/Leanote-<version>-android-{signed,unsigned}.{apk,aab}
+  ios/Leanote-<version>-ios-*.ipa 或 *-simulator-unsigned.zip
+  SHA256SUMS
+  release.json
+```
+
+宿主限制：
+
+| 宿主 | Linux | Windows | macOS | Android | iOS |
+|---|---|---|---|---|---|
+| Linux | 可构建 | 需要 wine | 跳过 | 需要 JDK 17+ 和 Android SDK | 跳过 |
+| macOS | 跳过 | 需要 wine | 可构建 | 需要 JDK 和 Android SDK | 需要 Xcode |
+| Windows | 跳过 | 可构建 | 跳过 | 尽力而为 | 跳过 |
+
+Android/iOS 不是桌面 UI 的移植：Capacitor 壳只提供服务器地址落地页，随后在 WebView 中打开用户填写的 Leanote server 网页版。首次构建先执行 `npm run mobile:init`；`android/`、`ios/` 是本地生成目录，不提交。
+
+签名通过环境变量可选注入，不自动上传：
+
+- 桌面：`CSC_LINK`、`CSC_KEY_PASSWORD`、`APPLE_*`
+- Android：`ANDROID_KEYSTORE_PATH`、`ANDROID_KEYSTORE_PASSWORD`、`ANDROID_KEY_ALIAS`、`ANDROID_KEY_PASSWORD`
+- iOS：`IOS_TEAM_ID`、`IOS_SIGNING_IDENTITY`、`IOS_PROVISIONING_PROFILE`、`IOS_EXPORT_METHOD`
+- 移动端默认服务器：`MOBILE_DEFAULT_SERVER`；禁止 HTTP：`MOBILE_ALLOW_HTTP=0`
+
+`dist/` 目录结构从旧版 `dist/*.deb` 改为 `dist/<version>/<platform>/`；旧的 `./build.sh linux|win` 仍可用。
+
+离线/缓存构建：
+- 已有 Electron 解压目录时设置 `ELECTRON_DIST_PATH=/path/to/electron`
+- 已有系统 fpm 时设置 `USE_SYSTEM_FPM=1` 并把 fpm 放进 `PATH`
+- 下载 Electron 或 fpm 卡住时可设置 `https_proxy`/`all_proxy`，或显式设置 `ELECTRON_MIRROR` / `ELECTRON_BUILDER_BINARIES_MIRROR`
 
 ### 4. npm scripts
 
 ```shell
-npm start             # 运行 app
-npm run build:linux   # 构建 Linux .deb
-npm run build:win     # 构建 Windows .exe
+npm start              # 运行 app
+npm run release        # 同 node scripts/release.mjs
+npm run release:all    # 当前宿主支持的全部目标
+npm run release:linux  # Linux .deb
+npm run release:win    # Windows NSIS
+npm run release:mac    # macOS DMG
+npm run release:android
+npm run release:ios
+npm run mobile:init    # 生成 Capacitor Android/iOS 工程
+npm run mobile:sync    # 同步 mobile/www 到原生工程
+npm run release:checksums
+npm run release:clean
 ```
 
 ### 3. 注意事项
@@ -158,9 +207,10 @@ Leanote destop app is licensed under the GPL v2.
    - [x] 登录表单 Enter 键提交
    - [x] 移除 note.html 中无效的 loadService() 调用
 9. [x] 打包与构建系统
-   - [x] 集成 electron-builder（Linux .deb + Windows .exe NSIS）
-   - [x] 创建 build.sh 构建脚本（支持 linux/win/android/ios 参数）
-   - [x] 自动生成 PNG 图标（.ico → build/icons/）
+   - [x] 集成 electron-builder（Linux .deb + Windows NSIS）
+   - [x] 统一 `scripts/release.mjs`：Linux/Windows/macOS/Android/iOS、`--dry-run`、产物归档和校验和
+   - [x] Capacitor 移动壳：打开用户填写的 Leanote server 网页版
+   - [x] Android/iOS 版本注入、可选签名和宿主能力检测
    - [x] 构建流程不再依赖 CSS 编译（原生 CSS 直接打包）
-   - [ ] Capacitor 移动端适配（需要 webpack 打包 + 适配层）
+   - [ ] 移动端启动图标/启动图（当前使用 Capacitor 默认图标）
 - [ ] ... 其他的等我想到了再写
