@@ -1,0 +1,12 @@
+{
+    "author": "leanote",
+    "authorUrl": "",
+    "desc": "Modern light theme",
+    "langs": {
+        "en-us": { "name": "Modern Light" },
+        "de-de": { "name": "Modern Hell" },
+        "zh-cn": { "name": "现代 浅色" },
+        "zh-hk": { "name": "現代 淺色" },
+        "ja-jp": { "name": "モダン ライト" }
+    }
+}

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="zh" class="ui-modern">
 <head>
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -28,8 +28,40 @@
 <link rel="stylesheet" href="public/themes/presentation.css" type="text/css" disabled id="themePresentation"/>
 <link rel="stylesheet" href="public/themes/writting.css" type="text/css" disabled id="themeWritting"/>
 
+<!-- modern ui (gated by html.ui-modern) -->
+<link rel="stylesheet" href="public/themes/modern/base.css" type="text/css"/>
+<link rel="stylesheet" href="public/themes/modern/markdown.css" type="text/css"/>
+<link rel="stylesheet" href="public/themes/modern/icons.css" type="text/css"/>
+
 <!-- for change theme -->
-<link rel="stylesheet" href="" type="text/css" id="theme"/>
+<link rel="stylesheet" href="public/themes/themes/modern-light/theme.css" type="text/css" id="theme"/>
+
+<script>
+// 在首屏绘制前应用配置里的主题，避免旧主题用户看到现代样式闪烁
+(function () {
+  var dir = 'modern-light';
+  try {
+    var fs = require('fs');
+    var path = require('path');
+    var src = fs.readFileSync(path.join(__dirname, 'public/config.js'), 'utf8');
+    var m = /"theme"\s*:\s*"([A-Za-z0-9_-]*)"/.exec(src);
+    if (m) dir = (m[1] || '').toLowerCase();
+  } catch (e) {
+    // 读取失败时保留 modern-light 默认值
+  }
+
+  var root = document.documentElement;
+  if (dir === 'modern-dark') {
+    root.className += ' ui-dark';
+  } else if (dir !== 'modern-light') {
+    root.className = root.className.replace(/\bui-modern\b/g, '').replace(/\bui-dark\b/g, '');
+  }
+
+  document.getElementById('theme').href = (dir && dir !== 'default')
+    ? 'public/themes/themes/' + dir + '/theme.css'
+    : '';
+})();
+</script>
 
 <script>
 // for windows

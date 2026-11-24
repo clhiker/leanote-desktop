@@ -1,0 +1,89 @@
+/*
+ * Modern UI layer.
+ * Every rule is gated by html.ui-modern so legacy themes are untouched.
+ */
+
+html.ui-modern {
+    --m-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Inter,
+        "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "WenQuanYi Micro Hei", sans-serif;
+    --m-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+        "Noto Sans Mono CJK SC", monospace;
+    --m-radius-sm: 4px;
+    --m-radius-md: 6px;
+    --m-radius-lg: 8px;
+    --m-radius-xl: 12px;
+    --m-radius-pill: 999px;
+    --m-space-1: 4px;
+    --m-space-2: 6px;
+    --m-space-3: 8px;
+    --m-space-4: 12px;
+    --m-space-5: 16px;
+    --m-space-6: 24px;
+}
+
+html.ui-modern body {
+    font-family: var(--m-font-sans);
+    font-weight: 400;
+    color: var(--m-text);
+}
+
+/* windows.css sets a universal font; re-apply the modern stack inside the app chrome */
+html.ui-modern :is(#leftNotebook, #notesAndSort, #searchNote, #noteItemList, #tool,
+    #editorBottom, #notebookBottom, #myProfile, .dropdown-menu, .modal-content, #notify)
+    *:not(.fa):not(.mce-ico):not([class*="ace_"]):not(pre):not(code) {
+    font-family: var(--m-font-sans);
+}
+
+html.ui-modern ::selection {
+    background: var(--m-selection-bg);
+    color: var(--m-text);
+}
+
+html.ui-modern #pageInner {
+    background: var(--m-canvas);
+}
+
+html.ui-modern #mainMask {
+    background-color: var(--m-mask-bg);
+}
+
+html.ui-modern #mainMask .loading-footer a {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #leftNotebook {
+    background: var(--m-sidebar) !important;
+}
+
+html.ui-modern #notebook,
+html.ui-modern #notebookBottom {
+    background: transparent !important;
+}
+
+html.ui-modern #noteAndEditor {
+    background: var(--m-canvas);
+    border-left-color: var(--m-border);
+}
+
+html.ui-modern #noteList {
+    background: var(--m-surface-subtle);
+    border-right-color: var(--m-border);
+}
+
+html.ui-modern #note {
+    background: var(--m-surface);
+}
+
+html.ui-modern #notesAndSort {
+    border-bottom-color: var(--m-border);
+}
+
+html.ui-modern #searchNote,
+html.ui-modern #noteItemListWrap {
+    background: transparent;
+}
+
+html.ui-modern #noteAndEditorMask {
+    background: var(--m-surface);
+}

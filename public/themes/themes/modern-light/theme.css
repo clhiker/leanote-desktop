@@ -1,0 +1,30 @@
+html.ui-modern {
+    --m-canvas: #f7f7f5;
+    --m-sidebar: #f2f2ef;
+    --m-surface: #ffffff;
+    --m-surface-subtle: #fafaf9;
+    --m-surface-muted: #f1f1ef;
+    --m-surface-hover: rgba(55, 53, 47, 0.06);
+    --m-surface-active: rgba(55, 53, 47, 0.10);
+    --m-border: #e7e7e4;
+    --m-border-strong: #d9d9d5;
+    --m-text: #37352f;
+    --m-text-secondary: #6f6e69;
+    --m-text-tertiary: #9b9a97;
+    --m-accent: #2383e2;
+    --m-accent-hover: #1a73d1;
+    --m-accent-soft: rgba(35, 131, 226, 0.10);
+    --m-accent-contrast: #ffffff;
+    --m-danger: #e03e3e;
+    --m-warning: #d9730d;
+    --m-success: #0f7b6c;
+    --m-selection-bg: #d9e6fb;
+    --m-mask-bg: rgba(247, 247, 245, 0.96);
+    --m-shadow-sm: 0 1px 2px rgba(15, 15, 15, 0.05);
+    --m-shadow-md: 0 4px 12px rgba(15, 15, 15, 0.08);
+    --m-shadow-lg: 0 12px 32px rgba(15, 15, 15, 0.14);
+    --m-scrollbar-thumb: rgba(55, 53, 47, 0.22);
+    --m-code-bg: #f6f7f8;
+    --m-code-inline-bg: rgba(135, 131, 120, 0.15);
+    --m-code-border: #e7e7e4;
+}

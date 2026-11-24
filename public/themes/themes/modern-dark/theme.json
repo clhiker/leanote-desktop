@@ -1,0 +1,12 @@
+{
+    "author": "leanote",
+    "authorUrl": "",
+    "desc": "Modern dark theme",
+    "langs": {
+        "en-us": { "name": "Modern Dark" },
+        "de-de": { "name": "Modern Dunkel" },
+        "zh-cn": { "name": "现代 深色" },
+        "zh-hk": { "name": "現代 深色" },
+        "ja-jp": { "name": "モダン ダーク" }
+    }
+}

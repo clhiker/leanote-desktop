@@ -1,0 +1,30 @@
+html.ui-modern.ui-dark {
+    --m-canvas: #191919;
+    --m-sidebar: #202020;
+    --m-surface: #212121;
+    --m-surface-subtle: #1d1d1d;
+    --m-surface-muted: #2a2a2a;
+    --m-surface-hover: rgba(255, 255, 255, 0.06);
+    --m-surface-active: rgba(255, 255, 255, 0.10);
+    --m-border: #2f2f2f;
+    --m-border-strong: #3d3d3d;
+    --m-text: #e9e9e7;
+    --m-text-secondary: #a3a29e;
+    --m-text-tertiary: #6f6e69;
+    --m-accent: #4f9cf9;
+    --m-accent-hover: #6cb0ff;
+    --m-accent-soft: rgba(79, 156, 249, 0.16);
+    --m-accent-contrast: #0b1620;
+    --m-danger: #ff7369;
+    --m-warning: #ffa344;
+    --m-success: #4dab9a;
+    --m-selection-bg: #28456b;
+    --m-mask-bg: rgba(25, 25, 25, 0.96);
+    --m-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.40);
+    --m-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --m-shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.65);
+    --m-scrollbar-thumb: rgba(255, 255, 255, 0.18);
+    --m-code-bg: #171717;
+    --m-code-inline-bg: rgba(255, 255, 255, 0.08);
+    --m-code-border: #303030;
+}

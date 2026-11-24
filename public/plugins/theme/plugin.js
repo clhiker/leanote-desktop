@@ -80,6 +80,17 @@ define(function() {
 				$('#theme').attr('href', '');
 			}
 
+			// 现代主题通过 html class 启用；旧主题保持原样
+			var root = document.documentElement;
+			root.classList.remove('ui-modern', 'ui-dark');
+			if (themeDir === 'modern-light' || themeDir === 'modern-dark') {
+				root.classList.add('ui-modern');
+				if (themeDir === 'modern-dark') {
+					root.classList.add('ui-dark');
+				}
+			}
+
+			window.Theme = me;
 			Config.theme = themeDir;
 			var ok = Api.writeConfig(Config);
 
