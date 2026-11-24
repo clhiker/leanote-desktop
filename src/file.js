@@ -8,6 +8,7 @@ var dbClient = require('./db_client');
 var Evt = require('./evt');
 var User = require('./user');
 var Common = require('./common');
+const p = require('./promise_util');
 var Images = dbClient.images;
 var Attachs = db.attachs;
 var Web = require('./web');
@@ -374,61 +375,34 @@ var File = {
 	},
 
 	// 处理用户图片
-	getImage: function(fileId, callback) {
-		var me = this;
-		if(!fileId) {
-			return callback(false);
+	getImage: async function(fileId, callback) {
+		if (!fileId) {
+			return callback && callback(false);
 		}
 
-		var Api = require('./api');
-
-		// 访问api, 得到图片
-		function getImageFromApi() {
-			// console.log('fetch servers image ' + fileId);
-			Api.getImage(fileId, function(fileLocalPath, filename) { 
-				if(fileLocalPath) {
-					// console.log('save image to local');
-					// 保存到本地数据库中
-					me.addImageForce(fileId, fileLocalPath, function(doc) {
-						if(doc) {
-							// console.log('save image to local success');
-						} else {
-							// console.log('save image to local error');
-						}
-						callback(fileLocalPath);
-						// return me.retImage(fileLocalPath, res);
-					});
-				} else {
-					// 远程取不到图片, 是没有网络? 还是远程真的没有了
-					// TODO
-					console.log("cann't get server's image" + fileId);
-					callback(false);
-					// return me.e404(res);
-				}
-			});	
-		}
-		// 先查看本地是否有该文件
-		// has表示本地数据库有记录
-		me.getImageLocalPath(fileId, function(has, fileLocalPath) {
-			// 本地有
-			// console.log('re img')
-			// console.log(fileLocalPath);
-			// console.log(fs.exists(fileLocalPath));
-			if(has && fileLocalPath) {
-				fs.access(fileLocalPath, fs.constants.F_OK, function(err) {
-					var exists = !err;
-					if(exists) { 
-						// console.log('本地存在 ' + fileId);
-						callback(fileLocalPath);
-						// me.retImage(fileLocalPath, res);
-					} else {
-						getImageFromApi();
-					}
-				});
-			} else {
-				getImageFromApi();
+		const Api = require('./api');
+		const getImageFromApi = async () => {
+			const fileLocalPath = await new Promise(resolve => Api.getImage(fileId, resolve));
+			if (!fileLocalPath) {
+				console.log("cann't get server's image" + fileId);
+				return false;
 			}
+			await new Promise(resolve => this.addImageForce(fileId, fileLocalPath, resolve));
+			return fileLocalPath;
+		};
+
+		const local = await new Promise(resolve => {
+			this.getImageLocalPath(fileId, (has, fileLocalPath) => resolve({has, fileLocalPath}));
 		});
+		if (local.has && local.fileLocalPath) {
+			const exists = await new Promise(resolve => {
+				fs.access(local.fileLocalPath, fs.constants.F_OK, err => resolve(!err));
+			});
+			if (exists) {
+				return callback && callback(local.fileLocalPath);
+			}
+		}
+		callback && callback(await getImageFromApi());
 	},
 
 	// 下载, 复制一份文件
@@ -504,141 +478,72 @@ var File = {
 	},
 
 	// 下载图片, 本地的, 或外站的
-	downloadImg: function(src, callback) {
-		var me = this;
+	downloadImg: async function(src, callback) {
 		// 本地的
-		if(src.indexOf('http://127.0.0.1') != -1 || src.indexOf('leanote://') != -1) {
-			var ret = /fileId=([a-zA-Z0-9]{24})/.exec(src);
-			if(ret && ret.length == 2) {
-				var fileId = ret[1];
-				me.getImage(fileId, function(filePath) {
-					callback(filePath);
-				});
-			} else {
-				callback();
+		if (src.indexOf('http://127.0.0.1') != -1 || src.indexOf('leanote://') != -1) {
+			const ret = /fileId=([a-zA-Z0-9]{24})/.exec(src);
+			if (!ret || ret.length !== 2) {
+				return callback();
 			}
-			
+			return callback(await new Promise(resolve => this.getImage(ret[1], resolve)));
+		}
+
 		// 本地地址
-		// 形如 file:///Users/life/Desktop/test/1.jpeg 本地文件
-		// file:///C:/Users/CLi/App
-		// file://C:/Users/CLi/App
-		// C:/a.png
-		} else if(src.indexOf('file:') === 0 || /^[c-z]:/i.test(src)) {
+		if (src.indexOf('file:') === 0 || /^[c-z]:/i.test(src)) {
 			if (src.indexOf('file://') >= 0) {
-				src = src.substr('file://'.length); // /user 或  /C:
+				src = src.substr('file://'.length);
 				if (!src) {
-					callback();
-					return;
+					return callback();
 				}
 			}
-
 			// windows下的 把最前一个'/'去掉
 			if (src.indexOf(':') >= 0 && src[0] == '/') {
 				src = src.substr(1);
 			}
-
-			// 图片类型
-			var type = 'png';
-			var strArr = src.split('.');
-			if (strArr.length > 1) {
-				type = strArr.pop();
-			}
-
-			// 新图片地址
-			var filename = Common.uuid() + '.' + type;
-			var imagePath = User.getCurUserImagesPath();
-			var imagePathAll = imagePath + '/' + filename;
-
-			// 复制图片
-			var readStream = fs.createReadStream(src);
-			var writeStream = fs.createWriteStream(imagePathAll);
-			readStream.pipe(writeStream);
-			readStream.on('end', function () {
+			const strArr = src.split('.');
+			const type = strArr.length > 1 ? strArr.pop() : 'png';
+			const imagePathAll = User.getCurUserImagesPath() + '/' + Common.uuid() + '.' + type;
+			try {
+				await fs.promises.copyFile(src, imagePathAll);
 				callback(imagePathAll);
-			});
-			readStream.on('error', function () {
+			} catch (e) {
 				callback();
-			});
-		}
-		else {
-			if (src.indexOf('https://leanote.com') == 0) {
-				needle.defaults({
-					timeout: 60000,
-					rejectUnauthorized: true
-				});
-			} else {
-				needle.defaults({
-					timeout: 60000,
-					rejectUnauthorized: false
-				});
 			}
-			// 远程的图片
-			needle.get(src, function(err, resp) {
-				/*
-				{ 'accept-ranges': 'bytes',
-				  'content-disposition': 'inline; filename="logo.png"',
-				  'content-length': '8583',
-				  'content-type': 'image/png',
-				  date: 'Mon, 19 Jan 2015 15:01:47 GMT',
-	  			*/
-				// log(resp.headers);
-				if(err || !resp || resp.statusCode != 200) {
-					callback(false);
-					return;
-				} else {
-					// 当图片没有时候还是执行这一步
+			return;
+		}
 
-					var typeStr = resp.headers['content-type'];
-					var type = 'png';
-					if(typeStr) {
-						var typeArr = typeStr.split('/');
-						if(typeStr.length > 1) {
-							type = typeArr[1];
-						}
-					}
-
-					// 返回的是字符串, 肯定是403之类的
-					if (typeof resp.body === 'string') {
-						callback(false);
-						return;
-					}
-
-					var filename = Common.uuid() + '.' + type;
-					var imagePath = User.getCurUserImagesPath();
-					var imagePathAll = imagePath + '/' + filename;
-					fs.writeFile(imagePathAll, resp.body, function(err) {
-						if(err) {
-							callback(false);
-						} else {
-							callback(imagePathAll);
-						}
-					});
-				}
-			});
+		needle.defaults({
+			timeout: 60000,
+			rejectUnauthorized: src.indexOf('https://leanote.com') === 0
+		});
+		const resp = await p(needle, 'get', src).catch(() => null);
+		if (!resp || resp.statusCode != 200) {
+			return callback(false);
+		}
+		// 返回的是字符串, 肯定是403之类的
+		if (typeof resp.body === 'string') {
+			return callback(false);
+		}
+		const typeStr = resp.headers['content-type'];
+		const typeArr = typeStr ? typeStr.split('/') : [];
+		const type = typeArr.length > 1 ? typeArr[1] : 'png';
+		const imagePathAll = User.getCurUserImagesPath() + '/' + Common.uuid() + '.' + type;
+		try {
+			await fs.promises.writeFile(imagePathAll, resp.body);
+			callback(imagePathAll);
+		} catch (e) {
+			callback(false);
 		}
 	},
 
 	// 复制外站图片
-	copyOtherSiteImage: function(src, callback) {
-		var me = this;
-		console.log('copyOtherSiteImage');
-		console.log(src);
-		me.downloadImg(src, function (filePath) {
-			console.log(filePath);
-			if (filePath) {
-				me._addImage(Common.objectId(), filePath, function(file) {
-					if (file) {
-						callback(Evt.getImageLocalUrl(file.FileId));
-					}
-					else {
-						callback(false);
-					}
-				});
-			}
-			else {
-				callback(false);
-			}
-		});
+	copyOtherSiteImage: async function(src, callback) {
+		const filePath = await new Promise(resolve => this.downloadImg(src, resolve));
+		if (!filePath) {
+			return callback(false);
+		}
+		const file = await new Promise(resolve => this._addImage(Common.objectId(), filePath, resolve));
+		callback(file ? Evt.getImageLocalUrl(file.FileId) : false);
 	}
 };
 
