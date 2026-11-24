@@ -543,4 +543,201 @@ html.ui-modern .pren-tool a:hover {
     color: var(--m-text);
 }
 
+/* ---------- dropdowns ---------- */
+
+html.ui-modern .dropdown-menu {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-lg);
+    padding: 6px 0;
+}
+
+html.ui-modern .dropdown-menu::before {
+    display: none;
+}
+
+html.ui-modern .dropdown-menu > li > a {
+    color: var(--m-text);
+    line-height: 20px;
+    padding: 5px 12px;
+    border-radius: var(--m-radius-sm);
+}
+
+html.ui-modern .dropdown-menu > li > a:hover,
+html.ui-modern .dropdown-menu > li > a:focus {
+    background: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+html.ui-modern .dropdown-menu > .active > a,
+html.ui-modern .dropdown-menu > .active > a:hover,
+html.ui-modern .dropdown-menu > .active > a:focus {
+    background: var(--m-accent-soft);
+    color: var(--m-text);
+}
+
+html.ui-modern .dropdown-menu .divider {
+    background-color: var(--m-border);
+}
+
+/* ---------- modals ---------- */
+
+html.ui-modern .modal-content {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-xl);
+    box-shadow: var(--m-shadow-lg);
+    color: var(--m-text);
+}
+
+html.ui-modern .modal-header,
+html.ui-modern .modal-footer {
+    border-color: var(--m-border);
+}
+
+html.ui-modern .modal-title {
+    font-weight: 600;
+    color: var(--m-text);
+}
+
+html.ui-modern .modal-body {
+    background: var(--m-surface);
+    color: var(--m-text);
+}
+
+html.ui-modern .modal .form-control {
+    background: var(--m-surface-subtle);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-md);
+    color: var(--m-text);
+    box-shadow: none;
+}
+
+html.ui-modern .modal .form-control::placeholder {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern .modal-backdrop.in {
+    background-color: #000;
+    opacity: 0.42;
+}
+
+html.ui-modern .close {
+    color: var(--m-text-tertiary);
+    opacity: 1;
+    text-shadow: none;
+}
+
+html.ui-modern .close:hover {
+    color: var(--m-text);
+}
+
+html.ui-modern .btn {
+    border-radius: var(--m-radius-md);
+}
+
+html.ui-modern .btn-primary {
+    background: var(--m-accent);
+    border-color: var(--m-accent);
+    color: var(--m-accent-contrast);
+}
+
+html.ui-modern .btn-primary:hover,
+html.ui-modern .btn-primary:focus {
+    background: var(--m-accent-hover);
+    border-color: var(--m-accent-hover);
+    color: var(--m-accent-contrast);
+}
+
+html.ui-modern .btn-default {
+    background: var(--m-surface);
+    border-color: var(--m-border);
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern .btn-default:hover,
+html.ui-modern .btn-default:focus {
+    background: var(--m-surface-hover);
+    border-color: var(--m-border-strong);
+    color: var(--m-text);
+}
+
+html.ui-modern #loadingDialog .progress {
+    height: 4px;
+    border-radius: var(--m-radius-pill);
+    background: var(--m-surface-muted);
+}
+
+html.ui-modern #loadingDialog .progress-bar {
+    background: var(--m-accent);
+}
+
+/* ---------- notification ---------- */
+
+html.ui-modern #notify .alert {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-left: 3px solid var(--m-warning);
+    border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-md);
+    color: var(--m-text);
+}
+
+html.ui-modern #notify .alert-success {
+    border-left-color: var(--m-success);
+}
+
+html.ui-modern #notify .alert-danger {
+    border-left-color: var(--m-danger);
+}
+
+html.ui-modern #notify .alert-info {
+    border-left-color: var(--m-accent);
+}
+
+/* ---------- masks and context tips ---------- */
+
+html.ui-modern .context-tips {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-lg);
+    color: var(--m-text);
+}
+
+html.ui-modern #noteMaskForLoading,
+html.ui-modern #batchMask {
+    background: var(--m-surface);
+}
+
+html.ui-modern .batch-note {
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-lg);
+}
+
+/* ---------- scrollbars ---------- */
+
+html.ui-modern ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+    background: transparent;
+}
+
+html.ui-modern ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+html.ui-modern ::-webkit-scrollbar-thumb {
+    background: var(--m-scrollbar-thumb);
+    border-radius: var(--m-radius-sm);
+    box-shadow: none;
+}
+
+html.ui-modern ::-webkit-scrollbar-thumb:hover {
+    background: var(--m-text-tertiary);
+}
+
+
 
