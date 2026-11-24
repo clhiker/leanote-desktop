@@ -5,6 +5,7 @@ var User = require('./user');
 // var db.notebooks = db.notebooks;
 var Common = require('./common');
 var Web = require('./web');
+const p = require('./promise_util');
 
 function log(o) {console.log(o);}
 
@@ -241,130 +242,105 @@ var Notebook = {
 	},
 
 	// 通过ServerNotebookId得到NotebookId
-	getNotebookIdByServerNotebookId: function(serverNotebookId, callback) {
-		if(!serverNotebookId) {
-			return callback(false);
+	getNotebookIdByServerNotebookId: async function(serverNotebookId, callback) {
+		if (!serverNotebookId) {
+			return callback && callback(false);
 		}
-		db.notebooks.findOne({ServerNotebookId: serverNotebookId}, function(err, notebook) {
-			if(err || !notebook) {
-				return callback(false);
-			}
-			callback(notebook.NotebookId);
-		});
+		try {
+			const notebook = await p(db.notebooks, 'findOne', {ServerNotebookId: serverNotebookId});
+			callback && callback(notebook ? notebook.NotebookId : false);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 	// 发送changes时用 api调用
-	getServerNotebookIdByNotebookId: function(notebookId, callback) {
-		if(!notebookId) {
-			return callback(false);
+	getServerNotebookIdByNotebookId: async function(notebookId, callback) {
+		if (!notebookId) {
+			return callback && callback(false);
 		}
-		db.notebooks.findOne({NotebookId: notebookId}, function(err, notebook) {
-			if(err || !notebook) {
-				return callback(false);
-			}
-			callback(notebook.ServerNotebookId);
-		});
+		try {
+			const notebook = await p(db.notebooks, 'findOne', {NotebookId: notebookId});
+			callback && callback(notebook ? notebook.ServerNotebookId : false);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 
 	// 强制删除
-	deleteNotebookForce: function(notebookId, callback) {
-		var me = this;
-		db.notebooks.remove({ServerNotebookId: notebookId}, function(err, n) {
-			if(err) { 
-				callback && callback(false);
-			} else {
-				callback && callback(true);
-			}
-		});
+	deleteNotebookForce: async function(notebookId, callback) {
+		try {
+			await p(db.notebooks, 'remove', {ServerNotebookId: notebookId});
+			callback && callback(true);
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 
 	// 添加笔记本, notebook object
 	// 这里的notebook是服务器传过来的数据, 需要fix下, 
-	addNotebookForce: function(notebook, callback) {
-		var me = this;
+	addNotebookForce: async function(notebook, callback) {
 		notebook.ServerNotebookId = notebook.NotebookId;
-		// notebook.NotebookId = Common.objectId();
 		notebook.NotebookId = notebook.NotebookId; // 就采用服务器的, 怕失去了层级
-		me.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, function(parentNotebookId) {
-			// 如果是第一次添加可能会有问题, 数据库还没有数据, 那么还找不到
-			if(parentNotebookId) {
-				notebook.ParentNotebookId = parentNotebookId;
-			} else {
-				// 否则, 就用服务器上的
-			}
-
-			notebook.CreatedTime = Common.goNowToDate(notebook.CreatedTime);
-			notebook.UpdatedTime = Common.goNowToDate(notebook.UpdatedTime);
-
-			notebook.IsDirty = false;
-			notebook.LocalIsNew = false;
-			notebook.LocalIsDelete = false;
-
-			db.notebooks.insert(notebook, function (err, newDoc) {   // Callback is optional
-				if(err) {
-					console.log(err);
-					callback && callback(false);
-				} else {
-					callback && callback(newDoc);
-				}
-			});
-		});
-	},
-	// 更新笔记本
-	// 这里的notebook是服务器传过来的数据, 需要fix下, 
-	updateNotebookForce: function(notebook, notebookLocal, callback) {
-		var me = this;
-
+		const parentNotebookId = await new Promise(resolve => this.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, resolve));
+		if (parentNotebookId) {
+			notebook.ParentNotebookId = parentNotebookId;
+		}
+		notebook.CreatedTime = Common.goNowToDate(notebook.CreatedTime);
+		notebook.UpdatedTime = Common.goNowToDate(notebook.UpdatedTime);
 		notebook.IsDirty = false;
 		notebook.LocalIsNew = false;
 		notebook.LocalIsDelete = false;
-
+		try {
+			const newDoc = await p(db.notebooks, 'insert', notebook);
+			callback && callback(newDoc);
+		} catch (e) {
+			console.log(e);
+			callback && callback(false);
+		}
+	},
+	// 更新笔记本
+	// 这里的notebook是服务器传过来的数据, 需要fix下, 
+	updateNotebookForce: async function(notebook, notebookLocal, callback) {
+		notebook.IsDirty = false;
+		notebook.LocalIsNew = false;
+		notebook.LocalIsDelete = false;
 		delete notebook['NumberNotes'];
 		delete notebook['UpdatedTime'];
 		delete notebook['CreatedTime'];
 
-		var serverNotebookId = notebook.NotebookId;
-		me.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, function(parentNotebookId) {
-			notebook.ParentNotebookId = parentNotebookId;
-			notebook.ServerNotebookId = notebook.NotebookId;
-			notebook.NotebookId = notebookLocal.NotebookId;
-			db.notebooks.update({ServerNotebookId: serverNotebookId}, {$set: notebook}, {}, function (err, updates) {   // Callback is optional
-				if(err) {
-					console.log(err);
-					callback && callback(false);
-				} else {
-					callback && callback(notebook);
-				}
-			});
-		});
+		const serverNotebookId = notebook.NotebookId;
+		const parentNotebookId = await new Promise(resolve => this.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, resolve));
+		notebook.ParentNotebookId = parentNotebookId;
+		notebook.ServerNotebookId = notebook.NotebookId;
+		notebook.NotebookId = notebookLocal.NotebookId;
+		try {
+			await p(db.notebooks, 'update', {ServerNotebookId: serverNotebookId}, {$set: notebook}, {});
+			callback && callback(notebook);
+		} catch (e) {
+			console.log(e);
+			callback && callback(false);
+		}
 	},
 
 	//
 
 	// 更新笔记本, NotebookId可能也要更改
 	// notebook是服务器传过来的
-	updateNotebookForceForSendChange: function(notebookId, notebook, callback) {
-		// console.log('updateNotebookForceForSendChange notebook是服务器传过来的');
-		var me = this;
+	updateNotebookForceForSendChange: async function(notebookId, notebook, callback) {
 		notebook.IsDirty = false;
 		notebook.LocalIsNew = false;
-		notebook.ServerNotebookId = notebook.NotebookId; // ? 怎么可能要改呢? 因为这可能是添加后的笔记本
-		notebook.NotebookId = notebookId; // 必须设为本地, 因为notebook.NotebookId是服务器传过来的 2/16 fixed
-
-		me.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, function(parentNotebookId) {
-			notebook.ParentNotebookId = parentNotebookId;
-			// console.log(notebook2);
-			// notebook2.Title  += " H-";
+		notebook.ServerNotebookId = notebook.NotebookId;
+		notebook.NotebookId = notebookId;
+		const parentNotebookId = await new Promise(resolve => this.getNotebookIdByServerNotebookId(notebook.ParentNotebookId, resolve));
+		notebook.ParentNotebookId = parentNotebookId;
+		try {
 			// multi, 因为历史原因, 导致大量重复notebookId的元素
-			db.notebooks.update({NotebookId: notebookId}, {$set: notebook}, {multi: true}, function (err, n) {
-				// console.log('updateNotebookForceForSendChange end' + notebookId + ' ' + n);
-				if(err) {
-					console.log(err);
-					callback && callback(false);
-				} else {
-					callback && callback(notebook);
-				}
-			});
-		});
+			await p(db.notebooks, 'update', {NotebookId: notebookId}, {$set: notebook}, {multi: true});
+			callback && callback(notebook);
+		} catch (e) {
+			console.log(e);
+			callback && callback(false);
+		}
 	},
 
 	// 深度优先一个列表
