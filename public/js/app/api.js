@@ -137,17 +137,6 @@ const Api = {
         me._themeMenu = menus;
     },
 
-    // markdown theme
-    _mdThemeMenu: null,
-    getMdThemeMenu: function () {
-        const me = this;
-        return me._mdThemeMenu;
-    },
-    setMdThemeMenu: function (menus) {
-        const me = this;
-        me._mdThemeMenu = menus;
-    },
-
     _importMenus: [],
     addImportMenu: function (menu) {
         const me = this;

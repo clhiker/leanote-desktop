@@ -1678,7 +1678,9 @@ var Pren = {
 
             // 代码高亮
             $(".pren-content pre").addClass("prettyprint linenums");
-            prettyPrint();
+            if (typeof prettyPrint === 'function') {
+                prettyPrint();
+            }
 
         } else {
             $('#themePresentation').attr('disabled', true);
@@ -2177,12 +2179,6 @@ function userMenu(allUsers) {
         var themeMenu = Api.getThemeMenu();
         if (themeMenu) {
             this.menu.append(themeMenu);
-        }
-
-        // markdownThemeMenu
-        var mdThemeMenu = Api.getMdThemeMenu();
-        if (mdThemeMenu) {
-            this.menu.append(mdThemeMenu);
         }
 
         var height = 235;
