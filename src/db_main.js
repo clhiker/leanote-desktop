@@ -41,56 +41,39 @@ db.init = function (curUser, dbPath, dataBasePath) {
  * @return {[type]}            [description]
  */
 db.exec = function(m, callback) {
-    var me = this;
-    // console.log('------------------------');
     console.log('main db called');
-    // console.log(m);
 
     if (!this._inited) {
         callback({token: m.token, err: new Error(), ret: false});
         return;
     }
-
     if (m.params && typeof m.params === 'string') {
         m.params = JSON.parse(m.params);
     }
 
-    if (m.method == 'find') {
-        var params = m.params;
-        var query = params.query;
-        var sorter = params.sorter;
-        if (sorter) {
-            db[m.dbname].find(query).sort(sorter).exec(function (err, ret) {
-                // 返回结果
-                callback({token: m.token, err: err, ret: ret});
+    const done = (err, ret) => callback({token: m.token, err, ret});
+    const run = async () => {
+        if (m.method === 'find') {
+            const {query, sorter} = m.params;
+            const ret = await new Promise((resolve, reject) => {
+                const cursor = db[m.dbname].find(query);
+                (sorter ? cursor.sort(sorter) : cursor).exec((err, r) => err ? reject(err) : resolve(r));
             });
-            return;
-        } else {
-            m.params = query;
+            return done(null, ret);
         }
-    }
-    else if (m.method == 'update') {
-        var params = m.params;
-        // console.log('update------------------')
-        // console.log(params.options ? '' : '????????????????????????????');
-        db[m.dbname].update(params.query, params.sets, params.options, function (err, ret) {
-            // 返回结果
-            callback({token: m.token, err: err, ret: ret});
+        if (m.method === 'update') {
+            const {query, sets, options} = m.params;
+            const ret = await new Promise((resolve, reject) => {
+                db[m.dbname].update(query, sets, options, (err, r) => err ? reject(err) : resolve(r));
+            });
+            return done(null, ret);
+        }
+        const ret = await new Promise((resolve, reject) => {
+            db[m.dbname][m.method](m.params, (err, r) => err ? reject(err) : resolve(r));
         });
-        return;
-    }
-
-    // find 没有sorter
-    // insert
-    db[m.dbname][m.method](m.params, function (err, ret) {
-        // console.log('返回结果');
-        // console.log(m);
-        // console.log(JSON.stringify(m.params));
-        // console.log(err);
-        // console.log(ret);
-        // 返回结果
-        callback({token: m.token, err: err, ret: ret});
-    });
-};
+        done(null, ret);
+    };
+    run().catch(e => done(e, undefined));
+};;
 
 module.exports = db;
