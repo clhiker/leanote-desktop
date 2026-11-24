@@ -1,0 +1,221 @@
+:root {
+    --bg: #f7f7f5;
+    --card: #ffffff;
+    --muted: #f1f1ef;
+    --border: #e7e7e4;
+    --text: #37352f;
+    --secondary: #6f6e69;
+    --tertiary: #9b9a97;
+    --accent: #2383e2;
+    --accent-hover: #1a73d1;
+    --danger: #e03e3e;
+    --shadow: 0 8px 28px rgba(15, 15, 15, 0.08);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #191919;
+        --card: #212121;
+        --muted: #2a2a2a;
+        --border: #2f2f2f;
+        --text: #e9e9e7;
+        --secondary: #a3a29e;
+        --tertiary: #6f6e69;
+        --accent: #4f9cf9;
+        --accent-hover: #6cb0ff;
+        --danger: #ff7369;
+        --shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+    }
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+}
+
+body {
+    margin: 0;
+    padding: calc(28px + env(safe-area-inset-top)) 18px calc(28px + env(safe-area-inset-bottom));
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+        Inter, "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card {
+    width: 100%;
+    max-width: 420px;
+    padding: 28px 24px 22px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+}
+
+.brand {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-bottom: 26px;
+}
+
+.mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: var(--accent);
+    color: #fff;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.mark svg {
+    width: 26px;
+    height: 26px;
+}
+
+h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+}
+
+.subtitle {
+    margin: 4px 0 0;
+    color: var(--secondary);
+    font-size: 13px;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--secondary);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+input {
+    width: 100%;
+    height: 44px;
+    padding: 0 13px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+}
+
+input::placeholder {
+    color: var(--tertiary);
+}
+
+input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.14);
+}
+
+.error {
+    margin: 8px 0 0;
+    color: var(--danger);
+    font-size: 12px;
+}
+
+.primary {
+    width: 100%;
+    height: 44px;
+    margin-top: 16px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.primary:hover {
+    background: var(--accent-hover);
+}
+
+.primary:active {
+    transform: translateY(1px);
+}
+
+.recent {
+    margin-top: 22px;
+}
+
+.recent-title {
+    margin-bottom: 8px;
+    color: var(--tertiary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.recent ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+}
+
+.recent button {
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    background: var(--muted);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: var(--text);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.recent button:hover {
+    border-color: var(--border);
+    background: var(--card);
+}
+
+.link {
+    margin-top: 18px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--secondary);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.link:hover {
+    color: var(--accent);
+}
+
+.hint {
+    margin: 18px 0 0;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    color: var(--tertiary);
+    font-size: 11px;
+    line-height: 1.5;
+}

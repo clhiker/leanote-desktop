@@ -1,0 +1,19 @@
+{
+  "appId": "com.leanote.mobile",
+  "appName": "Leanote",
+  "webDir": "mobile/www",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https",
+    "allowNavigation": ["*"],
+    "cleartext": true
+  },
+  "android": {
+    "backgroundColor": "#f7f7f5"
+  },
+  "ios": {
+    "backgroundColor": "#f7f7f5",
+    "contentInset": "always",
+    "limitsNavigationsToAppBoundDomains": false
+  }
+}

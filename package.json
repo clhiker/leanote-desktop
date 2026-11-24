@@ -7,13 +7,29 @@
   "scripts": {
     "start": "electron . --no-sandbox --disable-gpu --in-process-gpu",
     "start:dev": "electron . --devtools --no-sandbox --disable-gpu --in-process-gpu",
-    "build:icons": "bash build.sh icons",
-    "build:linux": "bash build.sh linux",
-    "build:win": "bash build.sh win",
-    "build:android": "bash build.sh android",
-    "build:ios": "bash build.sh ios"
+    "release": "node scripts/release.mjs",
+    "release:all": "node scripts/release.mjs all",
+    "release:desktop": "node scripts/release.mjs desktop",
+    "release:linux": "node scripts/release.mjs linux",
+    "release:win": "node scripts/release.mjs win",
+    "release:mac": "node scripts/release.mjs mac",
+    "release:android": "node scripts/release.mjs android",
+    "release:ios": "node scripts/release.mjs ios",
+    "release:checksums": "node scripts/release.mjs checksums",
+    "release:clean": "node scripts/release.mjs clean",
+    "mobile:init": "node scripts/release.mjs mobile:init",
+    "mobile:sync": "node scripts/release.mjs mobile:sync",
+    "build:icons": "node scripts/release.mjs icons",
+    "build:linux": "node scripts/release.mjs linux",
+    "build:win": "node scripts/release.mjs win",
+    "build:mac": "node scripts/release.mjs mac",
+    "build:android": "node scripts/release.mjs android",
+    "build:ios": "node scripts/release.mjs ios"
   },
   "dependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
     "@electron/remote": "^2.1.4",
     "async": "0.9.0",
     "dompurify": "^3.5.0",
@@ -33,6 +49,7 @@
     "xml2js": "0.4.23"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.6.2",
     "electron": "45.4.1",
     "electron-builder": "^26.18.0"
   }

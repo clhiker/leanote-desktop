@@ -9,6 +9,14 @@ config.codekit
 min
 
 /dist
+/dist-web
+/android
+/ios
+/mobile/www/config.generated.js
+*.jks
+*.keystore
+android/keystore.properties
+android/local.properties
 /nw
 /atom
 /gulpfile.js

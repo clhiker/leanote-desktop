@@ -2,6 +2,9 @@ appId: com.leanote.desktop
 productName: Leanote
 copyright: Copyright (c) Leanote
 
+directories:
+  buildResources: build
+
 files:
   - main.js
   - note.html
@@ -26,6 +29,7 @@ linux:
         - x64
   category: Office
   icon: build/icons
+  artifactName: Leanote-${version}-linux-${arch}.${ext}
 
 win:
   target:
@@ -33,6 +37,7 @@ win:
       arch:
         - x64
   icon: public/images/ico/256.ico
+  artifactName: Leanote-${version}-win-${arch}-setup.${ext}
 
 mac:
   target:
@@ -42,6 +47,12 @@ mac:
         - arm64
   icon: public/images/logo/leanote.png
   category: public.app-category.productivity
+  artifactName: Leanote-${version}-mac-${arch}.${ext}
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+  notarize: false
 
 nsis:
   oneClick: false
