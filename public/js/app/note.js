@@ -627,34 +627,6 @@ Note.curChangedSaveIt = function(force, callback) {
 };
 
 // 更新池里的笔记
-Note.updatePoolNote = function() {
-    const me = this;
-    for (let noteId in me.savePool) {
-        if (!noteId) {
-            continue;
-        }
-        // 删除之
-        delete me.savePool[noteId];
-        const hasChanged = me.savePool[noteId];
-        me.saveInProcess[noteId] = true;
-        ajaxPost("/note/updateNoteOrContent", hasChanged, function(ret) {
-            me.saveInProcess[noteId] = false;
-        });
-    }
-};
-// 启动保存, 暂不处理
-Note.updatePoolNoteInterval = null;
-Note.startUpdatePoolNoteInterval = function() {
-    return;
-    const me = this;
-    if (me.updatePoolNoteInterval) {
-        return;
-    }
-    me.updatePoolNoteInterval = setTimeout(function() {
-        log('update pool');
-        me.updatePoolNote();
-    }, 1000);
-};
 
 Note.clearSelect = function(target) {
     $(".item").removeClass("item-active");
@@ -1571,18 +1543,6 @@ Note.listNoteShareUserInfo = function(target) {
     showDialogRemote("/share/listNoteShareUserInfo", { noteId: noteId });
 }
 
-// 共享笔记
-Note.shareNote = function(target) {
-    const title = $(target).find(".item-title").text();
-    showDialog("dialogShareNote", { title: getMsg("shareToFriends") + "-" + title });
-
-    setTimeout(function() {
-        $("#friendsEmail").focus();
-    }, 500);
-
-    const noteId = $(target).attr("noteId");
-    shareNoteOrNotebook(noteId, true);
-}
 
 //---------------------------
 // 搜索
@@ -2324,10 +2284,6 @@ Note.getNoteContentLazy = function(runSeq) {
     }, 800);
 };
 
-Note.stopGetNoteContentLazy = function() {
-    const me = this;
-    me._stopGetNoteContentLazy = true;
-};
 
 Note.target = null; // 当前处理的note
 Note.menuItemsForMove = {}; // notebookId => menu
@@ -2750,28 +2706,6 @@ var Attach = {
         self.loadedNoteAttachs[noteId] = note.Attachs; // 一个对象
         self._renderAttachs(note.Attachs);
         return;
-        /*
-
-        if(self.loadedNoteAttachs[noteId]) {
-        	self._renderAttachs(self.loadedNoteAttachs[noteId]);
-        	return;
-        }
-        // 显示loading
-        self.attachListO.html('<li class="loading"><img src="public/images/loading-24.gif"/></li>');
-        // ajax获取noteAttachs
-        ajaxGet("/attach/getAttachs", {noteId: noteId}, function(ret) {
-        	var list = [];
-        	if(ret.Ok) {
-        		list = ret.List;
-        		if(!list) {
-        			list = [];
-        		}
-        	}
-        	// 添加到缓存中
-        	self.loadedNoteAttachs[noteId] = list;
-        	self._renderAttachs(list);
-        });
-        */
     },
     // 添加附件, attachment_upload上传调用
     addAttach: function(attachInfo) {
@@ -2818,11 +2752,6 @@ var Attach = {
         NoteService.updateAttach(noteId, attachs);
     },
 
-    // 下载
-    downloadAttach: function(fileId) {
-        const self = this;
-    },
-    downloadAll: function() {},
 
     // 服务器端同步成功后调用
     attachSynced: function(attachs, attach, noteId) {

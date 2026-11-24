@@ -20,9 +20,6 @@ Notebook.getCurNotebookId = function() {
     return Notebook.curNotebookId;
 };
 
-Notebook.getCurNotebook = function() {
-    return Notebook.cache[Notebook.curNotebookId];
-};
 
 // 为什么可能会没有? 因为可能是新加的笔记本, 此时该笔记本又有笔记, 一起同步过来
 // 还没显示到web上
@@ -566,39 +563,6 @@ Notebook.changeNav = function() {
     </div>
  */
 // TODO 层级
-Notebook.renderShareNotebooks = function(sharedUserInfos, shareNotebooks) {
-    if (isEmpty(sharedUserInfos)) {
-        return;
-    }
-
-    if (!shareNotebooks || typeof shareNotebooks != "object" || shareNotebooks.length < 0) {
-        return;
-    }
-
-    const $shareNotebooks = $("#shareNotebooks");
-    const user2ShareNotebooks = {};
-    for (var i in shareNotebooks) {
-        var userNotebooks = shareNotebooks[i];
-        user2ShareNotebooks[userNotebooks.UserId] = userNotebooks;
-    }
-    for (var i in sharedUserInfos) {
-        const userInfo = sharedUserInfos[i];
-        var userNotebooks = user2ShareNotebooks[userInfo.UserId] || { ShareNotebooks: [] };
-
-        userNotebooks.ShareNotebooks = [{ NotebookId: "-2", Title: "默认共享" }].concat(userNotebooks.ShareNotebooks)
-
-        const username = userInfo.Username || userInfo.Email;
-        const header = tt('<div class="folderNote closed"><div class="folderHeader"><a><h1 title="? 的共享"><i class="fa fa-angle-right"></i>?</h1></a></div>', username, username);
-        let body = '<ul class="folderBody">';
-        for (let j in userNotebooks.ShareNotebooks) {
-            const notebook = userNotebooks.ShareNotebooks[j];
-            body += tt('<li><a notebookId="?">?</a></li>', notebook.NotebookId, notebook.Title)
-        }
-        body += "</ul>";
-
-        $shareNotebooks.append(header + body + "</div>")
-    }
-}
 
 // 左侧导航, 选中某个notebook
 Notebook.selectNotebook = function(target) {
@@ -683,13 +647,6 @@ Notebook.isTrashNotebookId = function(notebookId) {
 Notebook.curActiveNotebookIsAll = function() {
     return Notebook.isAllNotebookId($("#notebookList .curSelectedNode").attr("notebookId"));
 };
-Notebook.curActiveNotebookIsTrash = function() {
-    return Notebook.isTrashNotebookId($("#notebookList .curSelectedNode").attr("notebookId"));
-};
-
-Notebook.renderCurNotebook = function() {
-        Notebook.changeNotebook(Notebook.curNotebookId);
-    }
     // 改变笔记本
     // 0. 改变样式
     // 1. 改变note, 此时需要先保存

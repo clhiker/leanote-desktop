@@ -46,27 +46,6 @@ function sortNotebooks(notebooks) {
 // 笔记本服务
 var Notebook = {
 
-	addNotebookTest: function() {
-		var doc = {
-			// _id: "xxxxx",
-			hello: 'world'
-		   , n: 5
-		   , today: new Date()
-		   , nedbIsAwesome: true
-		   , notthere: null
-		   , notToBeSaved: undefined  // Will not be saved
-		   , fruits: [ 'apple', 'orange', 'pear' ]
-		   , infos: { name: 'nedb' }
-		   };
-		console.log("save before")
-		db.notebooks.insert(doc, function (err, newDoc) {   // Callback is optional
-		  // newDoc is the newly inserted document, including its _id
-		  // newDoc has no key called notToBeSaved since its value was undefined
-		  // console.log(err);
-		  // console.log(newDoc);
-		});
-	},
-
 	// 建立关联
 	_mapNotebooks: function(notebooks) {
 		var me = this;
@@ -475,22 +454,6 @@ var Notebook = {
 		var conflictNotebooks = notebookSyncInfo.conflicts || [];
 		conflictNotebooks.length && console.log('	fix notebook conflicts');
 		async.eachSeries(conflictNotebooks, function(notebook, cb) { 
-			/*
-			var noteId = note.NoteId;
-			// 复制一份
-			me.copyNoteForConfict(noteId, function(newNote) {
-				if(newNote) {
-					// 更新之前的
-					me.updateNotebookForce(note, function() { 
-						cb();
-						// 前端来处理, 全量sync时不用前端一个个处理
-						notebookWeb.fixSyncConflict && notebookWeb.fixSyncConflict(note, newNote);
-					});
-				} else {
-					cb();
-				}
-			});
-			*/
 			cb();
 		}, function() {
 			// 最后调用

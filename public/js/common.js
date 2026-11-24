@@ -35,15 +35,6 @@ var MD;
 //---------------------
 // 公用方法
 
-function trimLeft(str, substr) {
-	if(!substr || substr == " ") {
-		return $.trim(str);
-	}
-	while(str.indexOf(substr) == 0) {
-		str = str.substring(substr.length);
-	}
-	return str;
-}
 
 function json(str) {
 	return eval("(" + str + ")")
@@ -111,10 +102,6 @@ function isEmpty(obj) {
 //------------
 //得到form的数据
 //返回json
-function getFormJsonData(formId) {
-	var data = formArrDataToJson($('#' + formId).serializeArray());
-	return data;
-}
 
 //$('#form').serializeArray()的数据[{name: a, value: b}, {name: "c[]", value: d}]
 //转成{a:b}
@@ -142,29 +129,6 @@ function formArrDataToJson(arrData) {
 }
 
 //将serialize的的form值转成json
-function formSerializeDataToJson(formSerializeData) {
-	var arr = formSerializeData.split("&");
-	var datas = {};
-	var arrObj= {}; // {a:[1, 2], b:[2, 3]};
-	for(var i = 0; i < arr.length; ++i) {
-		var each = arr[i].split("=");
-		var attr = decodeURI(each[0]);
-		var value = decodeURI(each[1]);
-		// 判断是否是a[]形式
-		if(attr.substring(attr.length-2, attr.length) == '[]') {
-			attr = attr.substring(0, attr.length-2);
-			if(arrObj[attr] == undefined) {
-				arrObj[attr] = [value];
-			} else {
-				arrObj[attr].push(value);
-			}
-			continue;
-		}
-		datas[attr] = value;
-	}
-	
-	return $.extend(datas, arrObj);
-}
 
 
 // ajax请求返回结果后的操作
@@ -248,19 +212,6 @@ function ajaxPostJson(url, param, successFunc, failureFunc, async) {
 	});
 }
 
-function findParents(target, selector) {
-	if($(target).is(selector)) {
-		return $(target);
-	}
-	var parents = $(target).parents();
-	for(var i = 0; i < parents.length; ++i) {
-		log(parents.eq(i))
-		if(parents.eq(i).is(selector)) {
-			return parents.seq(i);
-		}
-	}
-	return null;
-}
 
 /*
 ajaxPostJson(
@@ -404,27 +355,6 @@ function _setEditorContent(content, isMarkdown, preview, callback) {
 			}, 100);
 		}
 	} else {
-	/*
-		$("#wmd-input").val(content);
-		$("#wmd-preview").html(""); // 防止先点有的, 再点tinymce再点没内容的
-		if(!content || preview) { // 没有内容就不要解析了
-			$("#wmd-preview").html(preview).css("height", "auto");
-			if(ScrollLink) {
-				ScrollLink.onPreviewFinished(); // 告诉scroll preview结束了
-			}
-		} else {
-			// 还要清空preview
-			if(MarkdownEditor) {
-				$("#wmd-preview").html(previewToken + "<div style='text-align:center; padding: 10px 0;'><img src='http://leanote.com/images/loading-24.gif' /> 正在转换...</div>");
-				MarkdownEditor.refreshPreview();
-			} else {
-				// 等下再设置
-				clearIntervalForSetContent = setTimeout(function() {
-					setEditorContent(content, true, preview);
-				}, 200);
-			}
-		}
-	*/
 		if(MD) {
 			MD.setContent(content);
 			MD.clearUndo();
@@ -626,27 +556,6 @@ function _getEditorContent(isMarkdown) {
 }
 
 // 禁用编辑
-LEA.editorStatus = true;
-function disableEditor() {
-	var editor = tinymce.activeEditor;
-	if(editor) {
-		editor.hide();
-		LEA.editorStatus = false;
-		$("#mceTollbarMark").show().css("z-index", 1000);
-	}
-	
-	// toolbar 来个遮着...
-}
-function enableEditor() {
-	if(LEA.editorStatus) {
-		return;
-	}
-	$("#mceTollbarMark").css("z-index", -1).hide();
-	var editor = tinymce.activeEditor;
-	if(editor) {
-		editor.show();
-	}
-}
 
 //-----------
 // dialog
@@ -674,19 +583,6 @@ function closeDialog() {
 }
 
 // 原生的
-function showDialog2(id, options) {
-	options = options || {};
-	options.show = true;
-	$(id).modal(options);
-}
-function hideDialog2(id, timeout) {
-	if(!timeout) {
-		timeout = 0;
-	}
-	setTimeout(function() {
-		$(id).modal('hide');
-	}, timeout);
-}
 
 // 远程
 function showDialogRemote(url, data) {
@@ -698,15 +594,6 @@ function showDialogRemote(url, data) {
 	$("#leanoteDialogRemote").modal({remote: url});
 }
 
-function hideDialogRemote(timeout) {
-	if(timeout) {
-		setTimeout(function() {
-			$("#leanoteDialogRemote").modal('hide');
-		}, timeout);
-	} else {
-		$("#leanoteDialogRemote").modal('hide');
-	}
-}
 //---------------
 // notify
 // 没用
@@ -716,31 +603,6 @@ $(function() {
 	}
 })
 
-function notifyInfo(text) {
-	$.pnotify({
-	    title: '通知',
-	    text: text,
-	    type: 'info',
-	    styling: 'bootstrap'
-	});
-}
-function notifyError(text) {
-	$.pnotify.defaults.delay = 2000
-	$.pnotify({
-	    title: '通知',
-	    text: text,
-	    type: 'error',
-	    styling: 'bootstrap'
-	});
-}
-function notifySuccess(text) {
-	$.pnotify({
-	    title: '通知',
-	    text: text,
-	    type: 'success',
-	    styling: 'bootstrap'
-	});
-}
 
 // 对Date的扩展，将 Date 转化为指定格式的String   
 //月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符，   
@@ -778,9 +640,6 @@ function goNowToDatetime(goNow) {
 	}
 	return goNow.substr(0, 10) + " " + goNow.substr(11, 8);
 }
-function getCurDate() {
-	return (new Date()).format("yyyy-M-d");
-}
 function getCurDatetime() {
 	return (new Date()).format("yyyy-M-d hh:mm:ss");
 }
@@ -798,20 +657,6 @@ function enter(parent, children, func) {
 }
 
 // 回车则blue
-function enterBlur(parent, children) {
-	if(!parent) {
-		parent = "body";
-	}
-	if(!children) {
-		children = parent;
-		parent = "body";
-	}
-	$(parent).on("keydown", children, function(e) {
-		if (e.keyCode == 13) {
-			$(this).trigger("blur");
-		}
-	});
-}
 
 // 生成mongodb ObjectId
 function getObjectId() {
@@ -837,14 +682,6 @@ function showMsg(msg, timeout) {
 		}, timeout)
 	}
 }
-function showMsg2(id, msg, timeout) {
-	$(id).html(msg);
-	if(timeout) {
-		setTimeout(function() {
-			$(id).html("");
-		}, timeout)
-	}
-}
 
 //--------------
 // type == danger, success, warning
@@ -852,15 +689,6 @@ function showAlert(id, msg, type, id2Focus) {
 	$(id).html(msg).removeClass("alert-danger").removeClass("alert-success").removeClass("alert-warning").addClass("alert-" + type).show();
 	if(id2Focus) {
 		$(id2Focus).focus();
-	}
-}
-function hideAlert(id, timeout) {
-	if(timeout) {
-		setTimeout(function() {
-			$(id).hide();
-		}, timeout);
-	} else {
-		$(id).hide();
 	}
 }
 
@@ -896,35 +724,8 @@ function isEmail(email) {
 }
 
 // 正确返回该email
-function isEmailFromInput(inputId, msgId, selfBlankMsg, selfInvalidMsg) {
-	var val = $(inputId).val();
-	var msg = function() {};
-	if(msgId) {
-		msg = function(msgId, msg) {
-			showAlert(msgId, msg, "danger", inputId);
-		}
-	}
-	if(!val) {
-		msg(msgId, selfBlankMsg || getMsg("inputEmail"));
-	} else if(!isEmail(val)) {
-		msg(msgId, selfInvalidMsg || getMsg("errorEmail"));
-	} else {
-		return val;
-	}
-}
 
 // 复制文本
-function initCopy(aId, postFunc) {
-	// 定义一个新的复制对象
-	var clip = new ZeroClipboard(document.getElementById(aId), {
-	  moviePath: "/js/ZeroClipboard/ZeroClipboard.swf"
-	});
-
-	// 复制内容到剪贴板成功后的操作
-	clip.on('complete', function(client, args) {
-		postFunc(args);
-	});   
-}
 
 function showLoading() {
 	$("#loading").css("visibility", "visible");
@@ -946,78 +747,11 @@ function logout() {
 }
 
 // 得到图片width, height, callback(ret); ret = {width:11, height:33}
-function getImageSize(url, callback) {
-	var img = document.createElement('img');
-
-	function done(width, height) {
-		img.parentNode.removeChild(img);
-		callback({width: width, height: height});
-	}
-
-	img.onload = function() {
-		done(img.clientWidth, img.clientHeight);
-	};
-
-	img.onerror = function() {
-		done();
-	};
-
-	img.src = url;
-
-	var style = img.style;
-	style.visibility = 'hidden';
-	style.position = 'fixed';
-	style.bottom = style.left = 0;
-	style.width = style.height = 'auto';
-
-	document.body.appendChild(img);
-}
 
 // 插件中使用
-function hiddenIframeBorder() {
-	$('.mce-window iframe').attr("frameborder", "no").attr("scrolling", "no");
-}
 
-var email2LoginAddress = {
-    'qq.com': 'http://mail.qq.com',
-    'gmail.com': 'http://mail.google.com',
-    'sina.com': 'http://mail.sina.com.cn',
-    '163.com': 'http://mail.163.com',
-    '126.com': 'http://mail.126.com',
-    'yeah.net': 'http://www.yeah.net/',
-    'sohu.com': 'http://mail.sohu.com/',
-    'tom.com': 'http://mail.tom.com/',
-    'sogou.com': 'http://mail.sogou.com/',
-    '139.com': 'http://mail.10086.cn/',
-    'hotmail.com': 'http://www.hotmail.com',
-    'live.com': 'http://login.live.com/',
-    'live.cn': 'http://login.live.cn/',
-    'live.com.cn': 'http://login.live.com.cn',
-    '189.com': 'http://webmail16.189.cn/webmail/',
-    'yahoo.com.cn': 'http://mail.cn.yahoo.com/',
-    'yahoo.cn': 'http://mail.cn.yahoo.com/',
-    'eyou.com': 'http://www.eyou.com/',
-    '21cn.com': 'http://mail.21cn.com/',
-    '188.com': 'http://www.188.com/',
-    'foxmail.com': 'http://www.foxmail.com'
-};
-
-function getEmailLoginAddress(email) {
-	if(!email) {
-		return;
-	}
-	var arr = email.split('@');
-	if(!arr || arr.length < 2) {
-		return;
-	}
-    var addr = arr[1];
-    return email2LoginAddress[addr] || "http://mail." + addr;
-}
 
 // 返回是否是re.Ok == true
-function reIsOk(re) {
-	return re && typeof re == "object" && re.Ok;
-}
 
 // marker
 // 下拉扩展工具栏用, 点击文档导航用, 切换编辑模式时用
@@ -1291,8 +1025,6 @@ function openExternal(url) {
 }
 
 // loadToolIcons();
-function checkUpgrade() {
-}
 
 var trimTitle = function(title) {
 	// title不是string, 奇怪, mu

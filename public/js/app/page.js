@@ -1384,24 +1384,6 @@ var State = {
     }
 };
 
-/*
-function initLocalAccountDialogCheckboxEvent() {
-    $('#localAccountDialogCheckbox').click(function() {
-        localStorage.setItem(UserInfo.UserId + '-local', $(this).prop('checked') ? 'no' : '');
-    });
-}
-
-function showLocalAccountWarning() {
-    if (!UserInfo || !UserInfo.IsLocal) {
-        return;
-    }
-    if (localStorage.getItem(UserInfo.UserId + '-local')) {
-        return;
-    }
-
-    $('#localAccountDialog').modal('show');
-}
-*/
 
 // js/main.js 在load plugin后调用
 // 实始化页面
@@ -1417,31 +1399,6 @@ function initPage(initedCallback) {
     // 笔记
 
     // 没用, 估计要到main.js中, 不能这样, 这样刷新后就有问题
-    /*
-    gui.win.on('close', function(e) {
-    	e.preventDefault();
-    	return false;
-    	// onClose();
-    });
-    */
-
-    // window.onbeforeunload = function(e) {
-    //   console.log('I do not want to be closed');
-
-    //   // Unlike usual browsers, in which a string should be returned and the user is
-    //   // prompted to confirm the page unload. Electron gives the power completely
-    //   // to the developers, return empty string or false would prevent the unloading
-    //   // now. You can also use the dialog API to let user confirm it.
-    //   return false;
-    // };
-
-    // 在刷新时会有问题, 刷新后前一个browser消失了, 但事件还是存在在main process中
-    /*
-    gui.win.on('focus', function() {
-    });
-    gui.win.on('blur', function() {
-    });
-    */
     const ipc = electron.ipcRenderer;
     ipc.on('focusWindow', function(event, arg) {
         $('body').removeClass('blur');

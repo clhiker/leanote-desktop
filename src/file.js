@@ -619,6 +619,27 @@ var File = {
 	},
 
 	// 复制外站图片
+	copyOtherSiteImage: function(src, callback) {
+		var me = this;
+		console.log('copyOtherSiteImage');
+		console.log(src);
+		me.downloadImg(src, function (filePath) {
+			console.log(filePath);
+			if (filePath) {
+				me._addImage(Common.objectId(), filePath, function(file) {
+					if (file) {
+						callback(Evt.getImageLocalUrl(file.FileId));
+					}
+					else {
+						callback(false);
+					}
+				});
+			}
+			else {
+				callback(false);
+			}
+		});
+	}
 };
 
 module.exports = File; 

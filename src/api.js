@@ -39,9 +39,6 @@ needle.defaults({
 
 // 远程数据服务
 var Api = {
-	getVersion: function () {
-		return currentVersion
-	},
 
 	// 检查错误
 	checkError: function(error, resp) { 

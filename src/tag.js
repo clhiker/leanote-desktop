@@ -116,15 +116,6 @@ var Tag = {
 		});
 	},
 
-	// 添加tag后的返回, 更新usn
-	updateTagForce: function(tag, callback) {
-		var me = this;
-		tag.IsDirty = false;
-		var userId = User.getCurActiveUserId();
-		db.tags.update({UserId: userId, Tag: tag.Tag}, {$set: tag}, function() {
-			callback && callback();
-		});
-	},
 
 	// 服务器上更新过来, 已经存在了
 	setNotDirty: function(title) {
@@ -153,50 +144,5 @@ var Tag = {
 			callback && callback(tags);
 		});
 	},
-	/*
-	// 添加多个标签
-	addTags: function(titles) {
-		for(var i in titles) {
-			var title = titles[i];
-			this.addTag(title);
-		}
-	},
-	// 添加标签, 先查询是否存在
-	addTag: function(title, callback) {
-		var userId = User.getCurActiveUserId();
-		db.tags.count({UserId: userId, Title: title}, function(err, count) {
-			if(count) {
-				callback && callback({Ok: false, IsExists: true});
-			} else {
-				var date = new Date();
-				db.tags.insert({
-					TagId: Common.objectId(), 
-					UserId: userId, 
-					Title: title, 
-					CreatedTime: date,
-					UpdatedTime: date
-				}, function(err, doc) {
-					if(!err) {
-						callback && callback({Ok: false, Inserted: false});
-					} else {
-						callback && callback(doc);
-					}
-				});
-			}
-		});
-	},
-	// 更新标签标题
-	updateTagTitle: function(tagId, Title, callback) {
-		userId = User.getCurActiveUserId();
-		// db.tags.update({TagId: tagId, userId: userId}, {$set: {NumberNotes: count}}, {})
-		db.tags.update({TagId: tagId, userId: userId}, {$set: {Title: title}}, {}, function(err) {
-			if(err) {
-				callback && callback(false);
-			} else {
-				callback && callback(true);
-			}
-		});
-	},
-	*/
 };
 module.exports = Tag;

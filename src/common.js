@@ -8,17 +8,6 @@ var ObjectId = require('./objectid');
 // console.log(gui.App);
 
 // 开发版
-/*
-process.on('uncaughtException', function (err) {
-  // 打印出错误
-  console.log('~!!~ uncaughtException ~!!~');
-  console.log(err);
-  // 打印出错误的调用栈方便调试
-  console.log(err.stack);
-  // Web = require('./web');
-  // Web.debug('错误!!');
-});
-*/
 
 function log(o) {console.log(o)}
 Date.prototype.format = function(fmt) { //author: meizz   
@@ -72,12 +61,6 @@ var Common = {
 	uuid: function() {
 		this._uuid++;
 		return ((new Date()).getTime()) + '_' + this._uuid;
-	},
-	isWin: function() {
-		return process.platform.toLowerCase().indexOf('win') === 0;
-	},
-	isMac: function() {
-		return process.platform.toLowerCase().indexOf('mac') === 0;
 	},
 	// 得到目录分隔符
 	getPathSep: function() {
@@ -222,6 +205,7 @@ var Common = {
 		}
 	},
 
+
 	// 获取文件的json数据
 	getFileJson: function(filepath) {
 		var me = this;
@@ -240,33 +224,6 @@ var Common = {
 			return true;
 		} catch(e) { 
 			return false;
-		}
-	},
-
-	// 执行命令
-	cmd: function(args, exitFunc) {
-		var me = this;
-		var exec = require('child_process').exec;
-		var binPath = process.cwd() + '/public/bin/leanote-mac';
-		if(me.isWin()) { 
-			var binPath = process.cwd() + '/public/bin/leanote.exe';
-			go();
-		} else {
-			// 先chmod +x
-			var chmod = exec('chmod +x "' + binPath + '"');
-			chmod.on('exit', function(code) { 
-				go();
-			});
-		}
-
-		function go() {
-			var cmd = '"' + binPath + '"'; // "' + txtPath + '" "' + filePath + '"'
-			for(var i in args) {
-				cmd += ' "' + args[i] + '"';
-			}
-
-			last = exec(cmd); 
-			last.on('exit', exitFunc);
 		}
 	},
 
