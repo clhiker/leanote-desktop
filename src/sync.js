@@ -964,160 +964,102 @@ var Sync = {
 
     // 发送笔记改变
     // 发送笔记本的更改
-    sendNoteChanges: function(callback) {
-        var me = this;
+        sendNoteChanges: function(callback) {
+        const me = this;
         console.log('    3.2: sendNoteChanges');
-        // 获取所有笔记本的更改
-        Note.getDirtyNotes(function(notes) {
-            if (!Common.isEmpty(notes)) {
-                console.log('    dirty notes:', notes);
-            } else {
-                console.log('    no dirty notes');
+        const callApi = (fn, ...args) => new Promise(resolve => fn(...args, (err, ret) => resolve({err, ret})));
+        const callOne = (fn, ...args) => new Promise(resolve => fn(...args, resolve));
+
+        async function sendOneNote(note) {
+            if (note.InitSync || (note.ConflictNoteId && !note.ConflictFixed)) {
+                return;
             }
-            if (!notes) {
-                callback && callback();
-            } else {
-                // 调api, 所有执行后再callback();
-                // 一个一个同步执行, 因为要有
-                async.eachSeries(notes, function(note, cb) {
 
-                    if (note.InitSync) {
-                        console.log('    InitSync is Dirty', note);
-                        return cb();
+            if (note.LocalIsNew) {
+                if (!note.IsTrash && !note.LocalIsDelete) {
+                    const {err, ret: newNote} = await callApi(Api.addNote, note);
+                    if (err || !Common.isOk(newNote)) {
+                        console.log('    添加笔记失败!', err, newNote);
+                        me._syncInfo.note.errors.push({err, ret: newNote, note});
+                        return;
                     }
+                    console.log('    添加笔记成功!', note.Title);
+                    newNote.ServerNoteId = newNote.NoteId;
+                    newNote.NoteId = note.NoteId;
+                    newNote.IsBlog = note.IsBlog;
+                    me.fixSynced('note', 'changeAdds', newNote);
+                    Note.updateNoteForceForSendChange(newNote, true);
+                    me.checkNeedIncSyncAgain(newNote.Usn);
+                    return;
+                }
+                if (note.LocalIsDelete) {
+                    Note.deleteLocalNote(note.NoteId);
+                    return;
+                }
+                return;
+            }
 
-                    if (note.ConflictNoteId && !note.ConflictFixed) {
-                        console.log('    未解决的冲突不同步', note.Title);
-                        return cb();
-                    }
+            if (note.LocalIsDelete) {
+                const ret = await callOne(Api.deleteTrash, note);
+                if (Common.isOk(ret)) {
+                    me.checkNeedIncSyncAgain(ret.Usn);
+                } else if (typeof ret == 'object' && ret.Msg == 'notExists') {
+                    console.log('本地删除了的, 服务端没有, 直接删除本地的');
+                    Note.deleteLocalNote(note.NoteId);
+                }
+                return;
+            }
 
-                    if (note.LocalIsNew) {
-                        // 是新的, 且不是trash和删除的
-                        if (!note.IsTrash && !note.LocalIsDelete) {
-                            // 添加, newNote的返回不会很多值(server端)
-                            Api.addNote(note, function(err, newNote) {
-                                if (err || !Common.isOk(newNote)) {
-                                    console.log('    添加笔记失败!', err, newNote);
-                                    me._syncInfo.note.errors.push({ err: err, ret: newNote, note: note });
-                                    return cb();
-                                }
-                                console.log('    添加笔记成功!', note.Title);
+            const {err, ret} = await callApi(Api.updateNote, note);
+            if (!err && Common.isOk(ret)) {
+                console.log('    更新成功: ', note.Title);
+                ret.ServerNoteId = ret.NoteId;
+                ret.NoteId = note.NoteId;
+                Note.updateNoteForceForSendChange(ret, false);
+                me.fixSynced('note', 'changeUpdates', note);
+                me.checkNeedIncSyncAgain(ret.Usn);
+                return;
+            }
 
-                                newNote.ServerNoteId = newNote.NoteId;
-                                newNote.NoteId = note.NoteId;
-
-                                newNote.IsBlog = note.IsBlog; // 前端要用
-
-                                // me._syncInfo.note.changeAdds.push(newNote);
-                                me.fixSynced('note', 'changeAdds', newNote);
-
-                                Note.updateNoteForceForSendChange(newNote, true);
-
-                                // 这里
-                                me.checkNeedIncSyncAgain(newNote.Usn);
-
-                                cb();
-                            });
-                        }
-                        // 5/4
-                        // 本地已经删除了, 则彻底删除之
-                        else if (note.LocalIsDelete) {
-                            console.log('    既是新的, 又是删除的, 则删除笔记的');
-                            Note.deleteLocalNote(note.NoteId);
-                            return cb();
-                        }
-                        // isTrash, 不同步, 不删除
-                        else {
-                            console.log('    既是新的, 又是trash的, 不要同步');
-                            return cb();
-                        }
-                    } else if (note.LocalIsDelete) {
-                        // 删除, 不管它了
-                        // TODO
-                        Api.deleteTrash(note, function(ret) {
-                            if (Common.isOk(ret)) {
-                                me.checkNeedIncSyncAgain(ret.Usn);
-
-                                // 本地删除了的, 服务端没有, 直接删除本地的
-                            } else if (typeof ret == 'object' && ret.Msg == 'notExists') {
-                                console.log('本地删除了的, 服务端没有, 直接删除本地的');
-                                Note.deleteLocalNote(note.NoteId);
-                            }
-                            return cb();
-                        });
+            if (typeof ret == 'object') {
+                if (ret.Msg == 'conflict') {
+                    console.error('    updateNote 冲突');
+                    const content = await callOne(Note.getNoteContentFromServer, note.ServerNoteId);
+                    if (content === false || content != note.LocalContent) {
+                        me._syncInfo.note.changeConflicts.push(note);
                     } else {
-                        // 更新
-                        Api.updateNote(note, function(err, ret) {
-                            if (err || !Common.isOk(ret)) {
-                                console.log('    update error:' + note.Title, ret);
-                                if (typeof ret == 'object') {
-                                    if (ret.Msg == 'conflict') {
-                                        console.error('    updateNote 冲突');
-
-                                        // 这种情况有很少见, 原因是先pull, 肯定会pull过来
-                                        // 处理方法和pull一样, 看内容是否一样
-                                        // 如果一样, 则不标志为冲突, 修改本Usn为serverUsn, 等下次再send changes
-                                        Note.getNoteContentFromServer(note.ServerNoteId, function(content) {
-                                            if (content === false || content != note.LocalContent) {
-                                                me._syncInfo.note.changeConflicts.push(note);
-                                                cb();
-                                            } else {
-                                                // 不冲突, 修改之Usn
-                                                Api.getNote(note.ServerNoteId, function(serverNote) {
-                                                    // 取不到, 当作冲突
-                                                    if (!serverNote) {
-                                                        me._syncInfo.note.changeConflicts.push(note);
-                                                        cb();
-                                                    } else {
-                                                        Note.updateNoteUsn(note.NoteId, serverNote.Usn);
-                                                        cb();
-                                                    }
-                                                });
-                                            }
-                                        });
-                                    } else if (ret.Msg == 'notExists') {
-                                        Note.setError(note.NoteId, err, ret);
-                                        me.fixSynced('note', 'errors', { err: err, ret: ret, note: note });
-                                        // me._syncInfo.note.errors.push({err: err, ret: ret, note: note});
-                                        // 可能服务器上已删除, 此时应该要作为添加而不是更新
-                                        // me._syncInfo.note.changeNeedAdds.push(note);
-                                        cb();
-                                    }
-                                    // 其它错误, 不加, notImage 导致不能终止
-                                    else {
-                                        Note.setError(note.NoteId, err, ret);
-                                        console.error('    updateNote error', err, ret);
-                                        me.fixSynced('note', 'errors', { err: err, ret: ret, note: note });
-                                        cb();
-                                    }
-                                }
-                                // 更新失败了, 服务器返回异常
-                                else {
-                                    Note.setError(note.NoteId, err, ret);
-                                    console.error('    updateNote error', err);
-                                    me.fixSynced('note', 'errors', { err: err, ret: ret, note: note });
-                                    cb();
-                                }
-                            }
-                            // 更新成功
-                            else {
-                                console.log('    更新成功: ', note.Title);
-                                ret.ServerNoteId = ret.NoteId;
-                                ret.NoteId = note.NoteId;
-                                Note.updateNoteForceForSendChange(ret, false);
-                                // me._syncInfo.note.changeUpdates.push(note);
-                                me.fixSynced('note', 'changeUpdates', note);
-
-                                me.checkNeedIncSyncAgain(ret.Usn);
-
-                                return cb();
-                            }
-                        });
+                        const serverNote = await callOne(Api.getNote, note.ServerNoteId);
+                        if (!serverNote) {
+                            me._syncInfo.note.changeConflicts.push(note);
+                        } else {
+                            Note.updateNoteUsn(note.NoteId, serverNote.Usn);
+                        }
                     }
-                }, function() {
-                    callback && callback();
-                });
+                    return;
+                }
+                if (ret.Msg == 'notExists') {
+                    Note.setError(note.NoteId, err, ret);
+                    me.fixSynced('note', 'errors', {err, ret, note});
+                    return;
+                }
+                Note.setError(note.NoteId, err, ret);
+                console.error('    updateNote error', err, ret);
+                me.fixSynced('note', 'errors', {err, ret, note});
+                return;
             }
+            Note.setError(note.NoteId, err, ret);
+            console.error('    updateNote error', err);
+            me.fixSynced('note', 'errors', {err, ret, note});
+        }
+
+        Note.getDirtyNotes(async function(notes) {
+            if (!notes) {
+                return callback && callback();
+            }
+            for (const note of notes) {
+                await sendOneNote(note);
+            }
+            callback && callback();
         });
     },
     // 发送标签改变
