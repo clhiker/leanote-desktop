@@ -21,6 +21,8 @@ db.initGlobal();
 // 全局变量
 var ApiService = Service.apiService;
 var UserService = Service.userService;
+// 登录页不执行同步, 但 web.js 会读取该标记
+var SyncService = { fullSyncStart: false };
 var EvtService = require('./src/evt');
 var CommonService = Common;
 

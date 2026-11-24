@@ -1,3 +1,9 @@
+const util = require('util');
+// nedb 1.x 仍调用 Node 26 已移除的 util.isDate/isRegExp
+util.isDate = util.isDate || (v => v instanceof Date);
+util.isRegExp = util.isRegExp || (v => v instanceof RegExp);
+util.isArray = Array.isArray;
+
 const Datastore = require('nedb');
 const path = require('path');
 const Evt = require('./evt');
