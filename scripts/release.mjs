@@ -23,8 +23,6 @@ const DIST_ROOT = path.join(ROOT, 'dist');
 const APP_ID = 'com.leanote.mobile';
 
 // 镜像仅在显式设置时生效；默认走官方源以便复用本地 Electron 缓存
-if (process.env.ELECTRON_MIRROR) process.env.ELECTRON_MIRROR = process.env.ELECTRON_MIRROR;
-if (process.env.ELECTRON_BUILDER_BINARIES_MIRROR) process.env.ELECTRON_BUILDER_BINARIES_MIRROR = process.env.ELECTRON_BUILDER_BINARIES_MIRROR;
 process.env.electron_config_cache = process.env.electron_config_cache || path.join(os.homedir(), '.cache/electron');
 
 const argv = process.argv.slice(2);
@@ -494,17 +492,22 @@ function writeMetadata() {
     output: t.output ? rel(t.output) : '',
     degraded: !!t.degraded,
   }));
-  const targetResults = results.length
-    ? summarizeResults(results)
-    : (old.targets || []).map(t => ({
-        ...t,
-        output: t.output ? (path.isAbsolute(t.output) ? rel(t.output) : t.output) : '',
-      }));
+  const previousTargets = (old.targets || []).map(t => ({
+    ...t,
+    output: t.output ? (path.isAbsolute(t.output) ? rel(t.output) : t.output) : '',
+  }));
+  const targetMap = new Map(previousTargets.map(t => [t.name, t]));
+  for (const t of summarizeResults(results)) targetMap.set(t.name, t);
+  const targetOrder = ['linux', 'win', 'mac', 'android', 'ios'];
+  const targetResults = [
+    ...targetOrder.filter(n => targetMap.has(n)).map(n => targetMap.get(n)),
+    ...[...targetMap.keys()].filter(n => !targetOrder.includes(n)).map(n => targetMap.get(n)),
+  ];
   const manifest = {
     name: pkg.name,
     productName: 'Leanote',
     version: VERSION,
-    buildNumber: Number(BUILD_NUMBER),
+    buildNumber: results.length ? Number(BUILD_NUMBER) : (old.buildNumber || Number(BUILD_NUMBER)),
     generatedAt: new Date().toISOString(),
     git: gitInfo(),
     host: { os: HOST, arch: process.arch },
