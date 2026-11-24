@@ -91,33 +91,27 @@ var Api = {
 		return false;
 	},
 	getUrl: function(url, param) {
-		var url = Evt.leanoteUrl + '/api/' + url;
+		url = Evt.leanoteUrl + '/api/' + url;
 		// leanote ssl不能非法
-		if (url.indexOf('https://leanote.com') == 0) {
-			needle.defaults({
-				timeout: 60000,
-				rejectUnauthorized: true
-			});
-		} else {
-			needle.defaults({
-				timeout: 60000,
-				rejectUnauthorized: false
-			});
+		needle.defaults({
+			timeout: 60000,
+			rejectUnauthorized: url.indexOf('https://leanote.com') === 0
+		});
+		const query = new URLSearchParams(Object.assign({}, param, {token: User.getToken()})).toString();
+		if (query) {
+			url += (url.includes('?') ? '&' : '?') + query;
 		}
-		var token = User.getToken();
-		param = param || {};
-		param.token = token;
-		if(param) {
-			var paramStr = '';
-			for(var i in param) {
-				paramStr += i + '=' + param[i] + '&';
-			}
-		}
-		if(url.indexOf('?') >= 0) {
-			url =  url + '&' + paramStr;
-		}
-		url =  url + '?' + paramStr;
 		return url;
+	},
+	_get: function(path, param, opts) {
+		const me = this;
+		const url = me.getUrl(path, param);
+		return new Promise(resolve => {
+			needle.get(url, opts || {}, (error, response) => {
+				me.checkError(error, response);
+				resolve({error, ret: response && response.body});
+			});
+		});
 	},
 	// 登录
 	auth: function(email, pwd, host, callback) { 
@@ -159,98 +153,34 @@ var Api = {
 	},
 
 	getSyncNotebooks: function(afterUsn, maxEntry, callback) {
-		var me = this;
-		var url = this.getUrl('notebook/getSyncNotebooks', {afterUsn: afterUsn, maxEntry: maxEntry});
-		// console.log(url);
-		needle.get(url, 
-				function(error, response) {
-			me.checkError(error, response);
-			if(error) {
-				console.log(error);
-				return callback && callback(false);
-			}
-			var ret = response.body;
-			// console.log(ret);
-			// console.log(response);
-			if(Common.isOk(ret)) {
-				callback && callback(ret);
-			} else {
-				callback && callback(false);
-			}
-		});	
+		this._get('notebook/getSyncNotebooks', {afterUsn, maxEntry}).then(({error, ret}) => {
+			callback && callback(!error && Common.isOk(ret) ? ret : false);
+		});
 	},
 	getSyncNotes: function(afterUsn, maxEntry, callback) {
-		var me = this;
-		var url = this.getUrl('note/getSyncNotes', {afterUsn: afterUsn, maxEntry: maxEntry});
-		log(url);
-		needle.get(url, function(error, response) {
-			me.checkError(error, response);
-			if(error) {
-				console.log('note/getSyncNotes');
-				console.log(error);
-				return callback && callback(false);
-			}
-			var ret = response.body;
-			if(Common.isOk(ret)) {
-				callback && callback(ret);
-			} else {
-				callback && callback(false);
-			}
-		});	
+		this._get('note/getSyncNotes', {afterUsn, maxEntry}).then(({error, ret}) => {
+			callback && callback(!error && Common.isOk(ret) ? ret : false);
+		});
 	},
 	getSyncTags: function(afterUsn, maxEntry, callback) {
-		var me = this;
-		var url = this.getUrl('tag/getSyncTags', {afterUsn: afterUsn, maxEntry: maxEntry});
-		log(url);
-		needle.get(url, function(error, response) {
-			me.checkError(error, response);
-			if(error) {
-				console.log('tag/getSyncTags');
-				console.log(error);
-				return callback && callback(false);
-			}
-			var ret = response.body;
-			// console.log(ret);
-			if(Common.isOk(ret)) {
-				callback && callback(ret);
-			} else {
-				callback && callback(false);
-			}
-		});	
+		this._get('tag/getSyncTags', {afterUsn, maxEntry}).then(({error, ret}) => {
+			callback && callback(!error && Common.isOk(ret) ? ret : false);
+		});
 	},
 	getLastSyncState: function(callback) {
-		var me = this;
-		var url = this.getUrl('user/getSyncState', {macAddr: macAddr, v: currentVersion});
-		// console.log(url);
-		needle.get(url, {timeout: 10000}, function(error, response) {
-			// console.log('user/getSyncState ret');
-			me.checkError(error, response);
-			if(error) {
-				return callback && callback(false);
-			}
-			var ret = response.body;
-			callback && callback(ret);
-		});	
+		this._get('user/getSyncState', {macAddr, v: currentVersion}, {timeout: 10000}).then(({error, ret}) => {
+			callback && callback(error ? false : ret);
+		});
 	},
 	// 获取笔记内容, 获取之后保存到笔记中
 	getNoteContent: function(noteId, callback) {
-		var me = this;
-		var url = this.getUrl('note/getNoteContent', {noteId: noteId});
 		console.log('	get note content from server...', noteId);
-		// console.log(url);
-		needle.get(url, function(error, response) {
-			me.checkError(error, response);
-			if(error) {
-				log(error);
+		this._get('note/getNoteContent', {noteId}).then(({error, ret}) => {
+			if (error) {
 				return callback && callback(false);
 			}
-			var ret = response.body;
-			if(Common.isOk(ret)) { // {Content: 'xx', NoteId: 'xxx'}
-				callback && callback(ret);
-			} else {
-				callback && callback(false, ret);
-			}
-		});	
+			Common.isOk(ret) ? callback && callback(ret) : callback && callback(false, ret);
+		});
 	},
 
 	// TODO
@@ -485,18 +415,14 @@ var Api = {
 	// 获取笔记
 	// noteId是serverNoteId
 	getNote: function(noteId, callback) {
-		var me = this;
-		needle.get(me.getUrl('note/getNote', {noteId: noteId}), function(error, response) {
-			me.checkError(error, response);
-			if(error) {
+		this._get('note/getNote', {noteId}).then(({error, ret}) => {
+			if (error) {
 				return callback && callback(false);
 			}
-			var ret = response.body;
-			if(Common.isOk(ret)) {
+			if (Common.isOk(ret)) {
 				callback && callback(ret);
 			} else {
 				console.error(error);
-				console.log(me.getUrl('note/getNote', {noteId: noteId}));
 				callback && callback(false);
 			}
 		});
