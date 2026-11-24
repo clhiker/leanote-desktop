@@ -507,23 +507,18 @@ Notebook.searchNotebookForList = function(key) {
     const self = this;
     const $search = $("#notebookListForSearch");
     const $notebookList = $("#notebookList");
-    if (key) {
-        $search.show();
-        $notebookList.hide();
-
-        const notebooks = self.tree.getNodesByParamFuzzy("Title", key);
-        log('search');
-        log(notebooks);
-        if (isEmpty(notebooks)) {
-            $search.html("");
-        } else {
-            const setting = self.getTreeSetting(true);
-            self.tree2 = $.fn.zTree.init($search, setting, notebooks);
-        }
-    } else {
+    const searching = !!key;
+    $search.toggle(searching);
+    $notebookList.toggle(!searching);
+    if (!searching) {
         self.tree2 = null;
-        $search.hide();
-        $notebookList.show();
+        return;
+    }
+    const notebooks = self.tree.getNodesByParamFuzzy("Title", key);
+    if (isEmpty(notebooks)) {
+        $search.html("");
+    } else {
+        self.tree2 = $.fn.zTree.init($search, self.getTreeSetting(true), notebooks);
     }
 };
 
@@ -823,11 +818,7 @@ Notebook.setNotebook2Blog = function(target) {
 
     // 那么, 如果当前是该notebook下, 重新渲染之
     if (Notebook.curNotebookId === notebookId) {
-        if (isBlog) {
-            $("#noteList .item-blog").show();
-        } else {
-            $("#noteList .item-blog").hide();
-        }
+        $("#noteList .item-blog").toggle(isBlog);
 
         // 如果当前在所有笔记本下
     } else if (Notebook.curNotebookId === Notebook.allNotebookId) {
@@ -835,8 +826,7 @@ Notebook.setNotebook2Blog = function(target) {
             const noteId = $(this).attr("noteId");
             const note = Note.cache[noteId];
             if (note.NotebookId === notebookId) {
-                if (isBlog) $(this).find(".item-blog").show();
-                else $(this).find(".item-blog").hide();
+                $(this).find(".item-blog").toggle(isBlog);
             }
         });
     }
@@ -1198,20 +1188,16 @@ Notebook.init = function() {
         const importMenus = Api.getImportMenus();
         if (importMenus && importMenus.length) {
             const importSubmenus = new gui.Menu();
-            for (var i = 0; i < importMenus.length; ++i) {
-
-                (function(j) {
-                    const clickCallback = importMenus[j].click;
-                    if (clickCallback) {
-                        importMenus[i].click = function() {
-                            const notebookId = $(me.target).attr("notebookId");
-                            const notebook = Notebook.getNotebook(notebookId);
-                            clickCallback(notebook);
-                        }
+            for (let i = 0; i < importMenus.length; ++i) {
+                const menu = importMenus[i];
+                const clickCallback = menu.click;
+                if (clickCallback) {
+                    menu.click = function() {
+                        const notebookId = $(me.target).attr("notebookId");
+                        clickCallback(Notebook.getNotebook(notebookId));
                     }
-                })(i);
-
-                importSubmenus.append(new gui.MenuItem(importMenus[i]));
+                }
+                importSubmenus.append(new gui.MenuItem(menu));
             }
             this.imports = new gui.MenuItem({
                 submenu: importSubmenus,
@@ -1224,23 +1210,18 @@ Notebook.init = function() {
         // 导出
         const exportsSubMenus = new gui.Menu();
         const exportMenus = Api.getExportMenusForNotebook() || [];
-        for (var i = 0; i < exportMenus.length; ++i) {
-            (function(j) {
-
-                const menu = exportMenus[j];
-                const clickBac = menu.click;
-
-                const menuItem = new gui.MenuItem({
-                    label: menu.label,
-                    click: function (e) {
-                        const notebookId = $(me.target).attr('notebookId');
-                        clickBac && clickBac(notebookId);
-                    }
-                });
-
-                exportMenus[i].menu = menuItem;
-                exportsSubMenus.append(menuItem);
-            })(i);
+        for (let i = 0; i < exportMenus.length; ++i) {
+            const menu = exportMenus[i];
+            const clickBac = menu.click;
+            const menuItem = new gui.MenuItem({
+                label: menu.label,
+                click: function (e) {
+                    const notebookId = $(me.target).attr('notebookId');
+                    clickBac && clickBac(notebookId);
+                }
+            });
+            menu.menu = menuItem;
+            exportsSubMenus.append(menuItem);
         }
 
         if (exportMenus.length > 0) {
@@ -1279,16 +1260,8 @@ Notebook.init = function() {
             }
             */
             // 是否还有笔记
-            if (Note.notebookHasNotes(notebookId)) {
-                this.del.enabled = false;
-            } else {
-                this.del.enabled = true;
-            }
-            if (isSearch) {
-                this.addSub.enabled = false;
-            } else {
-                this.addSub.enabled = true;
-            }
+            this.del.enabled = !Note.notebookHasNotes(notebookId);
+            this.addSub.enabled = !isSearch;
             this.menu.popup(gui.getCurrentWindow(), e.originalEvent.x, e.originalEvent.y);
         }
     }
