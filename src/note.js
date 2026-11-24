@@ -766,128 +766,72 @@ const Note = {
 	// note是服务器传过来的, 需要处理下fix
 	// note.NoteId是服务器的
 	// needReloadContent 内容是否需要重新加载, 如果处理冲突没有冲突, 已有内容, 不用更新, 只是把其它的覆盖
-	updateNoteForce: function (note, callback, needReloadContent) {
+		updateNoteForce: async function (note, callback, needReloadContent) {
 		const me = this;
-
 		if (needReloadContent === undefined) {
 			needReloadContent = true;
 		}
-
-		// console.log('...', JSON.stringify(note))
-
 		note.IsDirty = false;
 		note.InitSync = needReloadContent;
 		note.LocalIsNew = false;
 		note.LocalIsDelete = false;
 		note.ContentIsDirty = false;
 
-		// 附件处理
 		const files = note.Files || [];
 		const attachsMap = [];
-		for (let i in files) {
-			const file = files[i];
-			if (file.IsAttach) { // LocalFileId, FileId
-				// 对于服务器上的, 只有FileId会传过来, 此时要与之前的做对比
+		for (const file of files) {
+			if (file.IsAttach) {
 				file.ServerFileId = file.FileId;
 				delete file['FileId'];
 				attachsMap[file.ServerFileId] = file;
 			}
 		}
 
-		// 之前也是有attachs的, 得到之前的attachs, 进行个merge
-		// TODO, 这里, 如果serverNoteId有两个一样的, 就有问题了, 待重现
-		me.getNoteByServerNoteId(note.NoteId, function (everNote) {
-			if (!everNote) {
-				return;
+		const everNote = await new Promise(resolve => me.getNoteByServerNoteId(note.NoteId, resolve));
+		if (!everNote) {
+			return;
+		}
+
+		const everAttachs = everNote.Attachs;
+		const everAttachsMap = {};
+		const needDeletes = [];
+		for (const everAttach of everAttachs) {
+			everAttachsMap[everAttach.ServerFileId] = everAttach;
+			if (!attachsMap[everAttach.ServerFileId]) {
+				needDeletes.push(everAttach);
 			}
-			const everAttachs = everNote.Attachs;
-			const everAttachsMap = {};
+		}
+		me.deleteAttachs(needDeletes);
 
-			// var needAdds = [];
-			// 得到要删除的
-			const needDeletes = [];
-			for (let i in everAttachs) {
-				const everAttach = everAttachs[i];
-				everAttachsMap[everAttach.ServerFileId] = everAttach;
-				if (!attachsMap[everAttach.ServerFileId]) {
-					needDeletes.push(everAttach);
-				}
+		const allAttachs = [];
+		for (const serverFileId in attachsMap) {
+			if (!everAttachsMap[serverFileId]) {
+				attachsMap[serverFileId].FileId = serverFileId;
+				allAttachs.push(attachsMap[serverFileId]);
+			} else {
+				allAttachs.push(everAttachsMap[serverFileId]);
 			}
-			// console.log('everAttachs');
-			// console.log(everAttachs);
-			// console.log('attachsMap')
-			// console.log(attachsMap);
-			// 通过FileId删除文件
-			me.deleteAttachs(needDeletes);
+		}
+		note.Attachs = allAttachs;
+		note.ServerNoteId = note.NoteId;
+		note.NoteId = everNote.NoteId;
+		delete note['Files'];
 
-			// 得到要添加的,所有的
-			// 新添加的没有Path
-			const allAttachs = [];
-			for (let serverFileId in attachsMap) {
-				if (!everAttachsMap[serverFileId]) {
-					// needAdds.push(attachMap[serverFileId]);
-					attachsMap[serverFileId].FileId = serverFileId; // 生成一个Id(一样的), 但是没有Path
-					allAttachs.push(attachsMap[serverFileId]);
-				} else {
-					allAttachs.push(everAttachsMap[serverFileId]);
-				}
-			}
-			// console.log('allAttachs', allAttachs);
-			note.Attachs = allAttachs;
-
-			note.ServerNoteId = note.NoteId;
-			note.NoteId = everNote.NoteId;
-			delete note['Files'];
-			// console.log('evernote');
-			// console.log(everNote);
-
-			// 得到本地笔记本Id
-			Notebook.getNotebookIdByServerNotebookId(note.NotebookId, function (localNotebookId) {
-				note['NotebookId'] = localNotebookId;
-
-				// console.log("updateNoteForce 后的")
-				// console.log(note);
-				// console.log(note.ServerNoteId + " " + note.IsDirty);
-
-				// console.log('ever note');
-				// console.log(everNote.NoteId);
-				// console.log(everNote);
-
-				// 不要服务器上的
-				delete note['UpdatedTime'];
-				delete note['CreatedTime'];
-				note.Err = '';
-
-				db.notes.update({NoteId: note.NoteId}, {$set: note}, {}, function (err, cnt) { // Callback is optional
-					// console.log('re:');
-					// console.log(err);
-					// console.log(cnt);
-
-					if (err) {
-						console.error(err);
-						callback && callback(false);
-					} else {
-						console.log('	强制更新本地笔记...', note.Title);
-						callback && callback(note);
-
-						/*
-						me.getNoteByServerNoteId(note.ServerNoteId, function(t) {
-							console.log('强制更新后的...');
-							console.log(t);
-						});
-						*/
-
-						// 重新统计之
-						Notebook.reCountNotebookNumberNotes(note.NotebookId);
-
-						// 下载内容, 图片, 附件
-						// console.log('..', note)
-						// console.log(JSON.stringify(note), note.Attachs)
-						me.syncContentAndImagesAndAttachs(note);
-					}
-				});
-			});
-		});
+		const localNotebookId = await new Promise(resolve => Notebook.getNotebookIdByServerNotebookId(note.NotebookId, resolve));
+		note['NotebookId'] = localNotebookId;
+		delete note['UpdatedTime'];
+		delete note['CreatedTime'];
+		note.Err = '';
+		try {
+			await p(db.notes, 'update', {NoteId: note.NoteId}, {$set: note}, {});
+			console.log('	强制更新本地笔记...', note.Title);
+			callback && callback(note);
+			Notebook.reCountNotebookNumberNotes(note.NotebookId);
+			me.syncContentAndImagesAndAttachs(note);
+		} catch (e) {
+			console.error(e);
+			callback && callback(false);
+		}
 	},
 
 	// addNote, updateNote后的操作
