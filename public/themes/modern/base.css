@@ -443,6 +443,45 @@ html.ui-modern .mce-primary {
     border-color: var(--m-accent) !important;
 }
 
+html.ui-modern #mceToolbar .mce-btn,
+html.ui-modern #mceToolbar .mce-btn button {
+    background: transparent;
+    background-image: none;
+    border-color: transparent;
+    box-shadow: none;
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #mceToolbar .mce-btn:hover,
+html.ui-modern #mceToolbar .mce-btn:focus,
+html.ui-modern #mceToolbar .mce-btn.mce-active {
+    background: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+html.ui-modern #mceToolbar .mce-ico {
+    color: inherit;
+}
+
+html.ui-modern .mce-menu {
+    background: var(--m-surface);
+    border-color: var(--m-border);
+}
+
+html.ui-modern .mce-menu-item {
+    color: var(--m-text);
+}
+
+html.ui-modern .mce-menu-item:hover span,
+html.ui-modern .mce-menu-item.mce-selected span {
+    color: var(--m-text) !important;
+}
+
+html.ui-modern .mce-menu-item:hover,
+html.ui-modern .mce-menu-item.mce-selected {
+    background: var(--m-surface-hover);
+}
+
 html.ui-modern #editor {
     background: var(--m-surface);
 }
