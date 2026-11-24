@@ -365,3 +365,182 @@ html.ui-modern .noteSplit:hover {
     background-color: var(--m-accent-soft);
 }
 
+/* ---------- editor chrome ---------- */
+
+html.ui-modern #tool {
+    background: var(--m-surface);
+    border-bottom-color: var(--m-border);
+}
+
+html.ui-modern #noteTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--m-text);
+    background: transparent;
+}
+
+html.ui-modern #noteTitle::placeholder {
+    color: var(--m-text-tertiary);
+    font-weight: 400;
+}
+
+html.ui-modern .ios7-a {
+    color: var(--m-text-secondary);
+    border-radius: var(--m-radius-md);
+}
+
+html.ui-modern .ios7-a:hover {
+    background: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+html.ui-modern #editorTool .fa {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #editorBottom {
+    background: var(--m-surface);
+    border-top-color: var(--m-border);
+}
+
+html.ui-modern #tagIcon {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #tags .label {
+    background: var(--m-surface-muted);
+    color: var(--m-text-secondary);
+    border-radius: var(--m-radius-pill);
+    font-weight: 500;
+}
+
+html.ui-modern #tagInput {
+    background: transparent;
+    color: var(--m-text);
+}
+
+html.ui-modern #tagInput::placeholder {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #tagInputPrompt,
+html.ui-modern #dropdownTrigger {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #dropdownTrigger:hover {
+    color: var(--m-accent);
+}
+
+html.ui-modern #mceToolbar,
+html.ui-modern #wmd-button-bar {
+    background-color: var(--m-surface-subtle);
+    border-bottom-color: var(--m-border);
+}
+
+html.ui-modern .mce-primary {
+    background-color: var(--m-accent) !important;
+    border-color: var(--m-accent) !important;
+}
+
+html.ui-modern #editor {
+    background: var(--m-surface);
+}
+
+html.ui-modern #editorContent {
+    color: var(--m-text);
+    padding: 10px 24px;
+}
+
+html.ui-modern #editorMask {
+    background: var(--m-surface);
+}
+
+html.ui-modern #editorMask a {
+    border-color: var(--m-border);
+    border-radius: var(--m-radius-lg);
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #editorMask a:hover {
+    background: var(--m-accent-soft);
+    border-color: var(--m-accent);
+    color: var(--m-accent);
+}
+
+html.ui-modern #mdEditor {
+    background: var(--m-surface);
+}
+
+html.ui-modern #mdEditor .navbar-default {
+    background: var(--m-surface-subtle);
+    border: 0;
+}
+
+html.ui-modern #mdEditor #wmd-input {
+    background: var(--m-surface);
+    color: var(--m-text) !important;
+    padding: 16px 20px;
+    font-family: var(--m-font-mono);
+}
+
+html.ui-modern #mdEditor #left-column {
+    font-family: var(--m-font-mono);
+}
+
+html.ui-modern #mdEditor #preview-contents,
+html.ui-modern #mdEditor .preview-panel,
+html.ui-modern #mdEditor #right-column {
+    background: var(--m-surface);
+}
+
+html.ui-modern #mdInfoToolbar {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #mdInfoToolbar .created-time,
+html.ui-modern #mdInfoToolbar .updated-time {
+    color: var(--m-text-secondary);
+}
+
+/* ---------- writing mode ---------- */
+
+html.ui-modern body.writting #note #editor {
+    background: var(--m-canvas);
+}
+
+html.ui-modern body.writting #note #editorContent {
+    background: var(--m-surface);
+    border-radius: var(--m-radius-lg);
+    box-shadow: var(--m-shadow-sm);
+}
+
+/* ---------- presentation mode ---------- */
+
+html.ui-modern #presentation {
+    background: var(--m-surface);
+    color: var(--m-text);
+    font-family: var(--m-font-sans);
+}
+
+html.ui-modern #presentation.writting,
+html.ui-modern #presentation.black {
+    background: var(--m-canvas);
+    color: var(--m-text);
+}
+
+html.ui-modern .pren-tool {
+    background: var(--m-surface);
+    border-bottom: 1px solid var(--m-border);
+}
+
+html.ui-modern .pren-tool a {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern .pren-tool a:hover {
+    background: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+
