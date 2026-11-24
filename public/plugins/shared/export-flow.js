@@ -98,6 +98,115 @@ define(function () {
                     notebookClick(notebookId);
                 }
             });
+        },
+
+        exportNotes: function (plugin, noteIds, msgKey, successKey, exportMethod) {
+            if (!noteIds || noteIds.length === 0) {
+                return;
+            }
+            Flow.chooseDir(async function (targetPath) {
+                if (!targetPath) {
+                    return;
+                }
+                Flow.startLoading(plugin, msgKey);
+                let i = 0;
+                const total = noteIds.length;
+                for (const noteId of noteIds) {
+                    if (plugin.loadingIsClosed) {
+                        Flow.hideLoading();
+                        continue;
+                    }
+                    i++;
+                    Api.loading.setProgress(100 * i / total);
+                    const note = await new Promise(resolve => Api.noteService.getNote(noteId, resolve));
+                    await new Promise(resolve => plugin[exportMethod](note, targetPath, resolve, i, total));
+                }
+                Flow.hideLoading();
+                Notify.show({title: 'Info', body: getMsg(successKey)});
+            });
+        },
+
+        exportForNotebook: function (plugin, notebookId, msgKey, successKey, exportMethod) {
+            if (!notebookId) {
+                return;
+            }
+
+            async function processNotebook(id, currentPath) {
+                const allNotes = [];
+                const notes = await new Promise(resolve => Api.noteService.getNotes(id, resolve));
+                if (notes) {
+                    allNotes.push(...notes);
+                }
+                const children = Api.notebook.getSubNotebooks(id) || [];
+                for (const child of children) {
+                    const childPath = currentPath + '/' + Flow.fixFilename(child.Title);
+                    try {
+                        if (!Api.NodeFs.existsSync(childPath)) {
+                            Api.NodeFs.mkdirSync(childPath);
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        continue;
+                    }
+                    allNotes.push(...await processNotebook(child.NotebookId, childPath));
+                }
+                return allNotes;
+            }
+
+            function tryExport(targetPath) {
+                if (!targetPath) {
+                    return;
+                }
+                const notebook = Api.notebook.getNotebook(notebookId);
+                const notebookName = Flow.fixFilename(notebook.Title);
+                const newPath = targetPath + '/' + notebookName;
+                try {
+                    if (Api.NodeFs.existsSync(newPath)) {
+                        Api.gui.dialog.showMessageBoxSync(Api.gui.getCurrentWindow(), {
+                            type: 'warning',
+                            buttons: ['确定'],
+                            title: '警告',
+                            message: '目录 "' + notebookName + '" 已存在，请选择其他目录保存。'
+                        });
+                        Flow.chooseDir(tryExport);
+                        return;
+                    }
+                    Api.NodeFs.mkdirSync(newPath);
+                } catch (e) {
+                    console.error(e);
+                    return;
+                }
+
+                Flow.startLoading(plugin, msgKey);
+                processNotebook(notebookId, newPath).then(async (notes) => {
+                    const total = notes.length;
+                    let i = 0;
+                    for (const note of notes) {
+                        if (plugin.loadingIsClosed) {
+                            Flow.hideLoading();
+                            continue;
+                        }
+                        i++;
+                        Api.loading.setProgress(100 * i / total);
+                        const noteNotebook = Api.notebook.getNotebook(note.NotebookId);
+                        let notePath = newPath;
+                        if (noteNotebook.NotebookId !== notebookId) {
+                            const path = [];
+                            let current = noteNotebook;
+                            while (current && current.NotebookId !== notebookId) {
+                                path.unshift(Flow.fixFilename(current.Title));
+                                current = Api.notebook.getNotebook(current.ParentNotebookId);
+                            }
+                            notePath = newPath + '/' + path.join('/');
+                        }
+                        await new Promise(resolve => plugin[exportMethod](note, notePath, resolve, i, total));
+                    }
+                    Flow.hideLoading();
+                    Notify.show({title: 'Info', body: getMsg(successKey)});
+                });
+            }
+
+            Flow.chooseDir(tryExport);
         }
     };
     return Flow;
