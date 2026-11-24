@@ -20,7 +20,6 @@ Commands:
   win          Build Windows .exe installer (NSIS, x64)
   android      Build Android APK via Capacitor
   ios          Build iOS app via Capacitor (requires macOS + Xcode)
-  less-only    Compile LESS to CSS only, no packaging
   icons        Generate PNG icons from .ico for Linux packaging
   help         Show this help message
 EOF
@@ -33,48 +32,6 @@ log() {
     echo "  $1"
     echo "════════════════════════════════════════════════════════════"
     echo ""
-}
-
-# ─── LESS Compilation ──────────────────────────────────────────────────────
-
-compile_less() {
-    log "Compiling LESS files"
-
-    # Core theme files
-    for f in \
-        public/themes/basic.less:public/themes/basic.css \
-        public/themes/default.less:public/themes/default.css \
-        public/themes/presentation.less:public/themes/presentation.css \
-        public/themes/writting.less:public/themes/writting.css \
-        public/themes/windows.less:public/themes/windows.css \
-        public/css/login.less:public/css/login.css \
-        public/themes/markdown/meditor.less:public/themes/markdown/meditor.css
-    do
-        src="${f%%:*}"
-        dst="${f#*:}"
-        if [ -f "$src" ]; then
-            npx lessc "$src" "$dst"
-            echo "  ✓ $src → $dst"
-        fi
-    done
-
-    # Color themes
-    for dir in public/themes/themes/*/; do
-        if [ -f "$dir/theme.less" ]; then
-            npx lessc "$dir/theme.less" "$dir/theme.css"
-            echo "  ✓ $dir/theme.less"
-        fi
-    done
-
-    # Markdown theme subdirectories
-    for dir in public/themes/markdown/*/; do
-        if [ -f "$dir/index.less" ]; then
-            npx lessc "$dir/index.less" "$dir/index.css"
-            echo "  ✓ $dir/index.less"
-        fi
-    done
-
-    echo "  LESS compilation complete."
 }
 
 # ─── Icon Generation ───────────────────────────────────────────────────────
@@ -110,7 +67,6 @@ build_linux() {
         generate_icons
     fi
 
-    compile_less
     npx electron-builder --linux deb --x64
 
     log "Linux build complete"
@@ -122,7 +78,6 @@ build_linux() {
 build_windows() {
     log "Building Windows .exe installer"
 
-    compile_less
     npx electron-builder --win nsis --x64
 
     log "Windows build complete"
@@ -140,7 +95,6 @@ build_android() {
         exit 1
     fi
 
-    compile_less
     build_web_for_mobile
     npx cap sync android
 
@@ -167,7 +121,6 @@ build_ios() {
         exit 1
     fi
 
-    compile_less
     build_web_for_mobile
     npx cap sync ios
 
@@ -200,7 +153,6 @@ case "${1:-}" in
     win)        build_windows ;;
     android)    build_android ;;
     ios)        build_ios ;;
-    less-only)  compile_less ;;
     icons)      generate_icons ;;
     help|-h|--help) usage ;;
     *)          usage ;;

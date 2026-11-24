@@ -16,6 +16,12 @@ Leanote Desktop is an Electron-based note-taking app (desktop client for the ope
 - `enableRemoteModule`, `app.makeSingleInstance`, `app.allowRendererProcessReuse` and `shell.openItem` no longer exist; do not reintroduce them.
 - Electron 42+ downloads its binary on first launch; `npm ci` alone does not create `node_modules/electron/dist`.
 
+### Native CSS migration
+
+- Business styles are plain CSS (CSS Nesting + custom properties); LESS, `lessc`, `dev/` gulp tooling and `build.sh less-only` were removed. Do not reintroduce a CSS build step.
+- `public/themes/**/*.css` and `public/css/**/*.css` are tracked sources (previously gitignored).
+- Partials were flattened into page-level files (`default.css`, `login.css`); only composite color themes use native `@import`.
+
 ### require() paths in browser/ service files
 
 `src/browser/service.js` and `src/browser/service_login.js` are loaded via `<script>` tags in the HTML files. Electron resolves `require()` paths relative to the **HTML file location** (project root), not the script file's own directory. Always use `./src/...` format, not `../` format.
@@ -24,7 +30,7 @@ These files also use `var` (not `const`) for global variables since they're load
 
 ### Dark theme white background
 
-The night theme had several white background issues fixed in `public/themes/themes/night/theme.less`:
+The night theme had several white background issues fixed in `public/themes/themes/night/theme.css`:
 - `body, html, #page, #pageInner` — added dark background
 - `#editorContent`, `#editorContentWrap` — added dark background
 - `#wmd-input.ace-tm` — was hardcoded `#ffffff`, changed to `@noteBg`
@@ -51,32 +57,6 @@ npm i
 # Electron 42+ downloads its binary on first launch, not during install
 # (run `npm start` or `npx electron --version` before using node_modules/electron/dist directly)
 
-# Install dev dependencies (for LESS compilation)
-cd dev && npm i
-
-# Compile LESS themes (required before first run)
-# Option 1: One-shot compile via build script (recommended)
-./build.sh less-only
-
-# Option 2: Watch mode for development (auto-recompile on changes)
-cd dev && npx gulp dev
-
-# Option 3: Manual compile (individual files)
-cd dev && npx lessc ../public/themes/default.less ../public/themes/default.css
-cd dev && npx lessc ../public/themes/basic.less ../public/themes/basic.css
-cd dev && npx lessc ../public/themes/presentation.less ../public/themes/presentation.css
-cd dev && npx lessc ../public/themes/writting.less ../public/themes/writting.css
-cd dev && npx lessc ../public/themes/windows.less ../public/themes/windows.css
-cd dev && npx lessc ../public/css/login.less ../public/css/login.css
-cd dev && npx lessc ../public/themes/markdown/meditor.less ../public/themes/markdown/meditor.css
-
-# Compile color themes
-cd dev && for dir in ../public/themes/themes/*/; do
-  if [ -f "$dir/theme.less" ]; then
-    npx lessc "$dir/theme.less" "$dir/theme.css"
-  fi
-done
-
 # Run the app
 ./node_modules/electron/dist/electron . --no-sandbox --disable-gpu --in-process-gpu
 
@@ -94,9 +74,6 @@ node tests/test_getmac.js
 ### Build & Packaging
 
 ```bash
-# Compile LESS only (no packaging)
-./build.sh less-only
-
 # Generate PNG icons from .ico for Linux
 ./build.sh icons
 
@@ -117,7 +94,6 @@ npm run build:linux
 npm run build:win
 npm run build:android
 npm run build:ios
-npm run build:less
 ```
 
 Output: `dist/` directory (e.g., `dist/Leanote-Desktop_1.0.0_amd64.deb`).
@@ -223,7 +199,7 @@ NeDB files in `<appData>/leanote/nedb55/<userId>/`. Collections: `users`, `g` (g
 
 ### Build & Packaging
 
-- **`build.sh`** — Main build script. Compiles LESS (including markdown themes), generates icons, packages for each platform.
+- **`build.sh`** — Main build script. Generates icons and packages for each platform; CSS is already tracked source.
 - **`electron-builder.yml`** — electron-builder configuration. Linux: .deb, Windows: NSIS .exe, Mac: .dmg (x64 + arm64). Uses ASAR archive.
 - **`build/icons/`** — PNG icons (16-256px) extracted from `.ico` for Linux desktop integration.
 - **`package.json`** — Contains `build` section for electron-builder, npm scripts for each platform.
@@ -237,13 +213,13 @@ The markdown system uses `markdown-it` v14.1.1 with `highlight.js` for code synt
 - **`public/md/modern-markdown.css`** — Light theme styles for code blocks, tables, task lists, footnotes, blockquotes, inline code, and twemoji images.
 - **Token-based TOC** — A markdown-it core plugin (`toc_collect`) extracts headings during parsing and builds the TOC in `#leanoteNavContentMd`.
 - **API surface** (`window.MD`): `focus()`, `setContent()`, `getContent()`, `onResize()`, `resize()`, `clearUndo()`, `toggleToAce()`, `toggleToLight()`, `setModeName()`, `changeAceKeyboardMode()`, `insertLink()`.
-- **Dark theme**: The night theme (`public/themes/themes/night/theme.less`) includes dark hljs syntax colors (VS Code dark palette), dark table/blockquote/inline code backgrounds, and dark mark highlighting. Twemoji images are constrained to `1.1em` via CSS.
+- **Dark theme**: The night theme (`public/themes/themes/night/theme.css`) includes dark hljs syntax colors (VS Code dark palette), dark table/blockquote/inline code backgrounds, and dark mark highlighting. Twemoji images are constrained to `1.1em` via CSS.
 - **Note**: `modern-markdown.js` uses `require()` paths like `./src/...` (resolved from project root), NOT relative paths. Same rule as `src/browser/` scripts.
 
 ### Themes & i18n
 
-- LESS themes in `public/themes/`, compiled to CSS. Color themes in `public/themes/themes/`.
-- Each color theme has a `theme.less` file that must be compiled to `theme.css`.
+- All app styles are plain CSS (CSS Nesting + custom properties) in `public/themes/` and `public/css/`; CSS is tracked source and needs no build step.
+- Color themes live in `public/themes/themes/<name>/theme.css` and are swapped by rewriting `#theme` href (`public/plugins/theme/plugin.js`). `volumn`, `pebbles_night`, `water_night` use native `@import "../night/theme.css"`.
+- Custom properties are namespaced per output file (`--default-*`, `--night-*`, `--login-*`, `--writting-*`, ...) to preserve the old LESS compile-unit isolation; keep the prefixes.
 - Language files in `public/langs/` (en-us, zh-cn, zh-hk, ja-jp, de-de). Loaded by `public/js/lang.js`.
-- **LESS must be compiled before running the app** - CSS files are not checked into the repository.
 - **Dark theme caveat**: TinyMCE skin (`public/tinymce/skins/custom/skin.min.css`) hardcodes white backgrounds. Dark themes must override `div.mce-edit-area`, `.mce-container-body`, `.mce-tinymce` with `!important`. Also check `#wmd-input.ace-tm` for Ace editor.

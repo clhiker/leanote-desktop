@@ -24,13 +24,10 @@ Please see http://app.leanote.com
 $> cd PATH-TO-LEANOTE-DESKTOP-APP
 $> npm i
 
-# 2. use gulp to parse less（需要先安装 dev 目录依赖）
-$> cd PATH-TO-LEANOTE-DESKTOP-APP/dev
-$> npm i
-$> gulp dev
+# 2. run with electron（首次运行会按需下载 Electron 二进制）
+$> npm start
 
-# 3. run with electron
-$> cd PATH-TO-LEANOTE-DESKTOP-APP
+# 或直接使用 electron 二进制（首次 npm start 之后才存在）
 $> ./node_modules/electron/dist/electron . --no-sandbox --disable-gpu --in-process-gpu
 ```
 
@@ -49,9 +46,6 @@ $> ./build.sh android
 # iOS (requires macOS + Xcode)
 $> ./build.sh ios
 
-# Just compile LESS → CSS
-$> ./build.sh less-only
-
 # Generate PNG icons from .ico
 $> ./build.sh icons
 ```
@@ -61,10 +55,9 @@ Output: `dist/` directory.
 ### 4. npm scripts
 
 ```shell
-npm start          # 运行 app
+npm start             # 运行 app
 npm run build:linux   # 构建 Linux .deb
 npm run build:win     # 构建 Windows .exe
-npm run build:less    # 仅编译 LESS
 ```
 
 ### 3. 注意事项
@@ -81,22 +74,24 @@ npm run build:less    # 仅编译 LESS
 
 - **GPU 进程崩溃**：在容器或虚拟机环境中运行时，Electron 的 GPU 进程可能崩溃（`GPU process isn't usable`）。需要添加 `--no-sandbox --disable-gpu --in-process-gpu` 参数。
 
-#### Less 编译问题
+#### 样式
 
-- **`gulp-less@3.x` 与 Node v25 不兼容**：会报 `write callback called multiple times` 错误。已升级至 `gulp-less@5.0.0`。如果编译仍有问题，CSS 文件已预先生成存在，不影响运行。
+- 业务样式已全部迁移到原生 CSS（CSS Nesting + 自定义属性），**不再需要编译**。直接编辑 `public/themes/`、`public/css/` 下的 `.css` 文件并刷新窗口即可。
+- 配色主题仍通过 `public/themes/themes/<name>/theme.css` 切换；组合主题（`volumn`、`pebbles_night`、`water_night`）通过原生 `@import` 复用 `night/theme.css`。
 
 #### 已修复的兼容性问题
 
 - 移除已废弃的 `crashReporter.start()` 调用（Electron 20+ 不支持）
 - `remoteMain.initialize()` 移至 `app.on('ready')` 内调用，避免初始化顺序错误
 - 修复 `service.js` / `service_login.js` 中 `gui` 模块的引用路径（`./src/gui` → `../gui`）
-- Electron 从 `dependencies` 移至 `devDependencies`，锁定版本 `^20.3.12`
+- Electron 从 `dependencies` 移至 `devDependencies`（当前 45.4.1）
 - 修复 note.html 中 `window.Service = window.loadService()` 调用（loadService 不存在）
 - 修复登录表单 Enter 键无法提交（添加 keydown 事件监听）
 - 修复暗色主题下 TinyMCE/Ace 编辑器白色背景
 - 修复 markdown 预览中 emoji 图标过大（twemoji img 无尺寸约束）
 - 升级 Electron 20 → 45：自定义协议改用 `protocol.handle`、渲染进程剪贴板改为主进程 IPC、`printToPDF` 统一走 Promise、移除已废弃的 `enableRemoteModule` / `makeSingleInstance` 等选项
 - 修复全新安装：`needle` 依赖从已停用的 `git://` 改为 GitHub HTTPS tarball；移除未使用的 `adm-zip` / `mkdirp`，锁定 `validator` 版本
+- 业务样式从 LESS 迁移到原生 CSS（CSS Nesting + 自定义属性），移除 less/gulp 编译链，CSS 文件作为源码纳入版本控制
 
 ## Docs
 
@@ -149,7 +144,7 @@ Leanote destop app is licensed under the GPL v2.
    - [ ] 增加图床
    - [ ] markdown 自动补全功能
 6. [x] 修复 Electron v20 + Node v25 环境下的运行兼容性
-   - [x] 升级 gulp-less 到 v5.0.0
+   - [x] 移除 LESS/gulp 编译链，样式迁移到原生 CSS
    - [x] 修复 crashReporter / remoteMain 初始化问题
    - [x] 修复 gui 模块引用路径
    - [x] 替换远程 CDN 脚本为本地 nw-gui-shim.js
@@ -166,6 +161,6 @@ Leanote destop app is licensed under the GPL v2.
    - [x] 集成 electron-builder（Linux .deb + Windows .exe NSIS）
    - [x] 创建 build.sh 构建脚本（支持 linux/win/android/ios 参数）
    - [x] 自动生成 PNG 图标（.ico → build/icons/）
-   - [x] LESS 编译集成到构建流程
+   - [x] 构建流程不再依赖 CSS 编译（原生 CSS 直接打包）
    - [ ] Capacitor 移动端适配（需要 webpack 打包 + 适配层）
 - [ ] ... 其他的等我想到了再写
