@@ -108,7 +108,8 @@ var File = {
 			// console.log(fileLocalPath);
 			// console.log(fs.exists(fileLocalPath));
 			if(has && fileLocalPath) {
-				fs.exists(fileLocalPath, function(exists) {
+				fs.access(fileLocalPath, fs.constants.F_OK, function(err) {
+					var exists = !err;
 					if(exists) {
 						if (fileLocalPath.indexOf('; charset=utf-8') < 0) {
 							// console.log('本地存在 ' + fileId);

@@ -4,9 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Leanote Desktop is an Electron-based note-taking app (desktop client for the open-source Leanote service). Migrated from NW.js to Electron. Uses jQuery + Bootstrap for UI, NeDB for local storage, TinyMCE/Ace/markdown-it for editors.
+Leanote Desktop is an Electron-based note-taking app (desktop client for the open-source Leanote service). Migrated from NW.js to Electron, now on Electron 45 + Node 26. Uses jQuery + Bootstrap for UI, NeDB for local storage, TinyMCE/Ace/markdown-it for editors.
 
 ## Known Issues & Fixes Applied
+
+### Electron 45 migration
+
+- Renderer `clipboard` was removed in Electron 44 and the main-process API is now async (`clipboard.read()` → `ClipboardItem`). Image paste goes through the `clipboard-read-image` IPC handled in `src/clipboard_main.js`; `public/js/common.js` must not use `electron.clipboard`.
+- `leanote://` is served with `protocol.handle` + `net.fetch` in `src/leanote_protocol.js`; `registerSchemesAsPrivileged` runs before `app.whenReady()` in `main.js`.
+- `printToPDF` is Promise-only; the old callback argument was silently ignored.
+- `enableRemoteModule`, `app.makeSingleInstance`, `app.allowRendererProcessReuse` and `shell.openItem` no longer exist; do not reintroduce them.
+- Electron 42+ downloads its binary on first launch; `npm ci` alone does not create `node_modules/electron/dist`.
 
 ### require() paths in browser/ service files
 
@@ -40,6 +48,8 @@ twemoji renders emoji as `<img class="emoji">` tags at full resolution. Without 
 ```bash
 # Install dependencies
 npm i
+# Electron 42+ downloads its binary on first launch, not during install
+# (run `npm start` or `npx electron --version` before using node_modules/electron/dist directly)
 
 # Install dev dependencies (for LESS compilation)
 cd dev && npm i
@@ -125,7 +135,7 @@ env -i HOME=$HOME DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
 
 ### Electron Process Model
 
-- **Main process** (`main.js`): Creates BrowserWindow, manages IPC, runs NeDB proxy server, registers `leanote://` custom protocol. Debug flag: `--devtools`.
+- **Main process** (`main.js`): Creates BrowserWindow, manages IPC, runs NeDB proxy server, registers `leanote://` via `protocol.handle`. Debug flag: `--devtools`.
 - **Renderer process** (`login.html` / `note.html`): Runs with `nodeIntegration: true`, `contextIsolation: false`. Loads services via `<script>` tags, not bundled.
 - **Preload** (`preload.js`): Defined but **not effective** — `contextIsolation: false` means the contextBridge is bypassed. The preload imports `./src/browser/service` and exposes it via `loadService()`, but the renderer loads services directly via `<script>` tags instead.
 
@@ -155,6 +165,7 @@ Services are loaded via `<script>` tags in the HTML files. The `require()` paths
 - `openUrl` — Open a new HTML page (login.html or note.html)
 - `quit-app` — Signal main process to quit
 - `show-tray` — Create system tray icon (macOS/Windows only)
+- `clipboard-read-image` — Read an image from the system clipboard, returns a data URL (Electron 44+ main-process clipboard API)
 
 **Main → Renderer:**
 - `db-exec-ret` — Return value from NeDB operation

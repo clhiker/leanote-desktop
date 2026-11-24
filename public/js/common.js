@@ -451,58 +451,42 @@ function _setEditorContent(content, isMarkdown, preview, callback) {
 	}
 }
 
+
 // 复制图片
 // 在web端得到图片
-const clipboard= electron.clipboard;
+// 返回 true 表示接下来会异步读取剪贴板
 function pasteImage(e) {
-	var image = clipboard.readImage();
-	if(image) {
-		var dataUrl = image.toDataURL();
-		// 空图片
-	    if(dataUrl == "data:image/png;base64,") {
-		    return;
-	    }
-	    FileService.pasteImage2(dataUrl, function(url) {
-			insertImage(url);
-		});
-		e && e.preventDefault();
-		return true
-	}
-	return false;
-
-	// 以下是node-webkit版
-
-	var items = (event.clipboardData  || event.originalEvent.clipboardData).items; // 可能有多个file, 找到属于图片的file
-	// find pasted image among pasted items
-	var blob;
-    for (var i = 0; i < items.length; i++) {
-    	// if (items[i].type.indexOf("image") === 0) {
-    	blob = items[i].getAsFile();
-		// console.log("paste images");
-		// console.log(blob);
-		// load image if there is a pasted image
-		if (blob) {
-			// console.log("??");
-		    var reader = new FileReader();
-		    reader.onloadend = function() { 
-		    	// console.log('read end');
-		    	// console.log(reader);
-		    	// console.log(reader.result);
-			    if(reader.result) {
-			    	if(blob.type.indexOf('image/') === 0) { // image类型
-				    	FileService.pasteImage2(reader.result, function(url) {
-							insertImage(url);
-						});
-			    	} else {
-			    		// 作为附件上传
-			    		// mac下还是图片
-
-			    	}
-			    }
-		    };
-		    reader.readAsDataURL(blob);
+	var data = e && (e.clipboardData || (e.originalEvent && e.originalEvent.clipboardData));
+	var hasImage = null;
+	if (data && data.items) {
+		hasImage = false;
+		for (var i = 0; i < data.items.length; i++) {
+			if (String(data.items[i].type).indexOf('image') === 0) {
+				hasImage = true;
+				break;
+			}
 		}
 	}
+	// 只有文本时不必读系统剪贴板
+	if (hasImage === false) {
+		return false;
+	}
+	if (hasImage === true) {
+		e.preventDefault();
+	}
+	// Electron 44 起渲染进程不再暴露 clipboard, 由主进程异步读取
+	electron.ipcRenderer.invoke('clipboard-read-image').then(function(dataUrl) {
+		// 空图片
+		if (!dataUrl || dataUrl == "data:image/png;base64,") {
+			return;
+		}
+		FileService.pasteImage2(dataUrl, function(url) {
+			insertImage(url);
+		});
+	}).catch(function(err) {
+		console.error(err);
+	});
+	return true;
 }
 
 // 插入本地图片

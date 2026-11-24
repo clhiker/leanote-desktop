@@ -13,9 +13,9 @@ Please see http://app.leanote.com
 
 ### 1. 环境要求
 
-- **Node.js**: v25.x（已验证可用）
-- **Electron**: v20.3.12（作为 devDependencies 安装）
-- **操作系统**: Linux（已验证，macOS/Windows 理论兼容）
+- **Node.js**: v26.x（已验证可用，Node 25+ 均可）
+- **Electron**: v45.4.1（作为 devDependencies 安装；首次启动时才下载二进制）
+- **操作系统**: Linux（已验证，macOS 13+ / Windows 理论兼容）
 
 ### 2. Install & Run
 
@@ -95,6 +95,8 @@ npm run build:less    # 仅编译 LESS
 - 修复登录表单 Enter 键无法提交（添加 keydown 事件监听）
 - 修复暗色主题下 TinyMCE/Ace 编辑器白色背景
 - 修复 markdown 预览中 emoji 图标过大（twemoji img 无尺寸约束）
+- 升级 Electron 20 → 45：自定义协议改用 `protocol.handle`、渲染进程剪贴板改为主进程 IPC、`printToPDF` 统一走 Promise、移除已废弃的 `enableRemoteModule` / `makeSingleInstance` 等选项
+- 修复全新安装：`needle` 依赖从已停用的 `git://` 改为 GitHub HTTPS tarball；移除未使用的 `adm-zip` / `mkdirp`，锁定 `validator` 版本
 
 ## Docs
 

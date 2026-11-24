@@ -1480,7 +1480,8 @@ const Note = {
 				if (file.Path.indexOf('data/') === 0) {
 					file.Path = Evt.getAbsolutePath(file.Path);
 				}
-				fs.exists(file.Path, function (isExists) {
+				fs.access(file.Path, fs.constants.F_OK, function (err) {
+					var isExists = !err;
 					if (isExists) {
 						needTransferFiles[file.FileId] = {
 							file: file.Path,

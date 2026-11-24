@@ -5,9 +5,15 @@ const {app, BrowserWindow, Tray, Menu, ipcMain: ipc} = require('electron');
 const isDebugMode = process.argv.includes('--devtools');
 
 const pdfMain = require('./src/pdf_main');
+const clipboardMain = require('./src/clipboard_main');
+const leanoteProtocol = require('./src/leanote_protocol');
 let appIcon;
 
 const remoteMain = require('@electron/remote/main')
+remoteMain.initialize();
+
+// 必须在 app ready 前注册
+leanoteProtocol.registerSchemes();
 
 app.on('browser-window-created', (_, win) => {
     remoteMain.enable(win.webContents);
@@ -17,29 +23,13 @@ app.on('browser-window-created', (_, win) => {
 // be closed automatically when the javascript object is GCed.
 let mainWindow = null;
 
-if (!app.makeSingleInstance) {
-    app.allowRendererProcessReuse = true
-
-    // single instance
-    const gotTheLock = app.requestSingleInstanceLock()
-    if (!gotTheLock) {
-        console.log("gotTheLock is false, another instance is running")
-        app.quit()
-    } else {
-        app.on('second-instance', (event, commandLine, workingDirectory) => {
-            if (mainWindow) {
-                mainWindow.show();
-                if (mainWindow.isMinimized()) {
-                    mainWindow.restore();
-                }
-                mainWindow.focus();
-            }
-        })
-    }
+// single instance
+const gotTheLock = app.requestSingleInstanceLock()
+if (!gotTheLock) {
+    console.log("gotTheLock is false, another instance is running")
+    app.quit()
 } else {
-    // single instance
-    const shouldQuit = app.makeSingleInstance((commandLine, workingDirectory) => {
-        // Someone tried to run a second instance, we should focus our window.
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
         if (mainWindow) {
             mainWindow.show();
             if (mainWindow.isMinimized()) {
@@ -48,10 +38,6 @@ if (!app.makeSingleInstance) {
             mainWindow.focus();
         }
     })
-
-    if (shouldQuit) {
-        app.quit()
-    }
 }
 
 // Quit when all windows are closed.
@@ -124,10 +110,7 @@ const DB = {
 
 // This method will be called when Electron has done everything
 // initialization and ready for creating browser windows.
-app.on('ready', () => {
-    remoteMain.initialize();
-    openIt();
-});
+app.whenReady().then(openIt);
 
 function removeEvents(win) {
     win.removeAllListeners('closed');
@@ -191,25 +174,11 @@ function bindEvents(win) {
 function openIt() {
     // 数据库
     DB.init();
+    clipboardMain.init();
 
     // 协议
-  const leanoteProtocol = require('./src/leanote_protocol');
-  leanoteProtocol.init();
+    leanoteProtocol.init();
 
-    // // Create the browser window.
-    // mainWindow = new BrowserWindow({
-    //         width: 1050,
-    //         height: 595,
-    //         frame: process.platform !== 'darwin',
-    //         transparent: false,
-    //         autoHideMenuBar: true,
-    //         webPreferences: {
-    //             nodeIntegration: true,
-    //             contextIsolation: false, // https://github.com/electron/electron/issues/27961
-    //             enableRemoteModule: true
-    //         }
-    //     }
-    // );
     let mainWindow = new BrowserWindow({
         width: 1200,
         height: 720,
@@ -218,8 +187,7 @@ function openIt() {
         autoHideMenuBar: true,
         webPreferences: {
             nodeIntegration: true,
-            contextIsolation: false, // https://github.com/electron/electron/issues/27961
-            enableRemoteModule: true
+            contextIsolation: false // https://github.com/electron/electron/issues/27961
         }
     })
 
@@ -257,13 +225,9 @@ function openIt() {
         arg.webPreferences = arg.webPreferences === undefined ? {} : arg.webPreferences;
         arg.webPreferences.nodeIntegration = true;
         arg.webPreferences.contextIsolation = false;
-        arg.webPreferences.enableRemoteModule = true;
 
       const html = arg.html;
       const everWindow = mainWindow;
-      if (arg.icon) {
-            arg.icon = new Tray(__dirname + arg.icon)
-        }
       const win2 = new BrowserWindow(arg);
       win2.loadURL('file://' + __dirname + '/' + html);
         mainWindow = win2;

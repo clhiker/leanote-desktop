@@ -14,36 +14,17 @@ var exportPdf = {
     win.webContents.on('did-finish-load', function() {
       console.log('load ok');
       setTimeout(function() {
-        var callback = function(err, data) {
-            fs.writeFile(targetPdfPath, data, function(err) {
-              if (err) {
-                callbcak(false);
-              }
-              else {
-                callbcak(true);
-              }
-              // win.close();
-            });
-         };
-        var po = win.webContents.printToPDF({
-            printBackground: true,
-            landscape: false,
-            pageSize: 'A4'
-          }, 
-          callbcak
-       );
-
-      if(typeof(po) != "object"){
-				return;
-			}
-
-			po.then(data => {
-				callback(null, data);
-        }
-      ).catch( err => {
-					callback(err, null);
-				}
-			); 
+        win.webContents.printToPDF({
+          printBackground: true,
+          landscape: false,
+          pageSize: 'A4'
+        }).then(function(data) {
+          fs.writeFile(targetPdfPath, data, function(err) {
+            callbcak(!err);
+          });
+        }).catch(function() {
+          callbcak(false);
+        });
       }, isMarkdown ? 1000 : 100);
     });
 

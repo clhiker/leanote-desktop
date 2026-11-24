@@ -27,7 +27,7 @@ const Api = {
         if (isMac()) {
             gui.Shell.showItemInFolder(dir);
         } else {
-            gui.Shell.openItem(dir);
+            gui.Shell.openPath(dir);
         }
     },
 

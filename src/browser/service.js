@@ -6,7 +6,7 @@ var Evt = require('./src/evt');
 var app = require('@electron/remote').app; // .require('app');
 var basePath = app.getPath('appData') + '/leanote'; // /Users/life/Library/Application Support/Leanote'; // require('nw.gui').App.dataPath;
 Evt.setDataBasePath(basePath);
-var protocol = require('electron').protocol; // .require('protocol');
+
 // 数据库初始化
 var db = require('./src/db');
 // db.init();

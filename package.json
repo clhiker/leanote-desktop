@@ -15,28 +15,26 @@
     "build:ios": "bash build.sh ios"
   },
   "dependencies": {
-    "@electron/remote": "^2.0.10",
-    "adm-zip": ">=0.4.11",
+    "@electron/remote": "^2.1.4",
     "async": "0.9.0",
-    "highlight.js": "^11.11.1",
-    "iconv-lite": "0.4.15",
+    "highlight.js": "^11.12.0",
+    "iconv-lite": "0.4.24",
     "markdown-it": "^14.1.1",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-emoji": "^3.0.0",
     "markdown-it-footnote": "^4.0.0",
     "markdown-it-mark": "^4.0.0",
     "markdown-it-task-lists": "^2.1.1",
-    "mkdirp": "0.3.5",
     "nedb": "1.1.1",
-    "needle": "git://github.com/leanote/needle.git",
+    "needle": "https://github.com/leanote/needle/archive/5eb35d8c97f646d3ce875f4c2e23b982edfb0db0.tar.gz",
     "node-getmac": "1.0.3",
     "twemoji": "^14.0.2",
-    "validator": ">=3.22.1",
-    "xml2js": "0.4.6"
+    "validator": "^13.15.26",
+    "xml2js": "0.4.23"
   },
   "devDependencies": {
-    "electron": "^20.3.12",
-    "electron-builder": "^26.8.1",
-    "less": "^4.6.4"
+    "electron": "45.4.1",
+    "electron-builder": "^26.18.0",
+    "less": "^4.9.1"
   }
 }

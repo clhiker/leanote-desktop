@@ -57,7 +57,7 @@ var File = {
 
       	// return;
       	try {
-      		var bf = new Buffer(data, 'base64');
+		var bf = Buffer.from(data, 'base64');
 			var err = fs.writeFileSync(filePath, bf);
 			if(err) {
 				return callback(false);
@@ -127,7 +127,7 @@ var File = {
 		    if (!bitmap) {
 		    	return '';
 		    }
-		    return new Buffer(bitmap).toString('base64');
+		    return Buffer.from(bitmap).toString('base64');
 		} catch(e) {
 			return '';
 		}
@@ -140,7 +140,7 @@ var File = {
 		    if (!bitmap) {
 		    	return '';
 		    }
-		    var base64 =  new Buffer(bitmap).toString('base64');
+		    var base64 =  Buffer.from(bitmap).toString('base64');
 
 		    var hash = crypto.createHash('md5');
 			hash.setEncoding('hex');
@@ -245,7 +245,7 @@ var File = {
       	var filePath = User.getCurUserImagesPath() + '/' + filename;
       	console.log(filePath);
       	// return;
-		fs.writeFile(filePath, new Buffer(data, 'base64'), function(err) {  
+		fs.writeFile(filePath, Buffer.from(data, 'base64'), function(err) {
 			if(err) {
 				console.log(err);
 				return;
@@ -306,7 +306,7 @@ var File = {
 			      	var filePath = User.getCurUserImagesPath() + '/' + filename;
 			      	console.log(filePath);
 			      	return;
-					fs.writeFile(filePath, new Buffer(ret, 'base64'), function(err) {  
+					fs.writeFile(filePath, Buffer.from(ret, 'base64'), function(err) {
 						if(err) {
 							log(err);
 							return;
@@ -517,7 +517,8 @@ var File = {
 			// console.log(fileLocalPath);
 			// console.log(fs.exists(fileLocalPath));
 			if(has && fileLocalPath) {
-				fs.exists(fileLocalPath, function(exists) {
+				fs.access(fileLocalPath, fs.constants.F_OK, function(err) {
+					var exists = !err;
 					if(exists) { 
 						// console.log('本地存在 ' + fileId);
 						callback(fileLocalPath);

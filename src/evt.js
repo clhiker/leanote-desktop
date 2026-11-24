@@ -38,13 +38,8 @@ var Evt = {
 	localUrl: 'http://127.0.0.1:8912',
 	dataBasePath: '',
 
-	// 是否有这个方法, 就代表是否可以用(含callback)
-	// https://github.com/atom/electron/commit/7d97bb6fe0a6feef886d927ea894bcb2f3521577
-	// 老版本没有这个问题
 	canUseProtocol: function () {
 		return true;
-		// return false;
-		// return protocol.registerFileProtocol;
 	},
 
 	getImageLocalUrlPrefix: function () {
