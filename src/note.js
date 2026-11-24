@@ -10,6 +10,7 @@ const Notebook = require('./notebook');
 // var Api = require('./api');
 const Common = require('./common');
 const Web = require('./web');
+const p = require('./promise_util');
 
 // var Notes = db.notes;
 
@@ -43,11 +44,8 @@ type NoteOrContent struct {
 // 笔记服务
 const Note = {
 	// 更新笔记
-	updateNoteOrContent: function (noteOrContent, callback, needAddToHistory) {
+	updateNoteOrContent: async function (noteOrContent, callback, needAddToHistory) {
 		const me = this;
-
-		// Web.alertWeb(process.type); // render
-
 		const userId = User.getCurActiveUserId();
 		noteOrContent['UserId'] = userId;
 
@@ -55,115 +53,78 @@ const Note = {
 		if (!Common.isValidDate(noteOrContent.UpdatedTime)) {
 			noteOrContent.UpdatedTime = date;
 		}
-
-		noteOrContent['IsDirty'] = true; // 已修改
+		noteOrContent['IsDirty'] = true;
 		noteOrContent['LocalIsDelete'] = false;
 
-		// 为什么不以noteOrContent.IsNew来判断是否是新建还是更新?
-		// 怕前端重复发请求, 保险起见
-		me.getNote(noteOrContent.NoteId, function (dbNote) {
-			// 新建的
-			if (!dbNote) {
-				// 新建笔记, IsNew还是保存着
-				if (noteOrContent.IsNew) {
-					if (!Common.isValidDate(noteOrContent.CreatedTime)) {
-						noteOrContent.CreatedTime = date;
-					}
-					noteOrContent['IsTrash'] = false;
-					delete noteOrContent['IsNew'];
-					noteOrContent['LocalIsNew'] = true;
+		const dbNote = await new Promise(resolve => me.getNote(noteOrContent.NoteId, resolve));
 
-					db.notes.insert(noteOrContent, function (err, newDoc) {   // Callback is optional
-						if (err) {
-							console.log(err);
-							callback && callback(false);
-						} else {
-							// 为什么又设置成true, 因为js的对象是共享的, callback用到了noteOrContent.IsNew来做判断
-							noteOrContent['IsNew'] = true;
-							callback && callback(newDoc);
-
-							// 重新统计笔记本的笔记数量
-							Notebook.reCountNotebookNumberNotes(noteOrContent.NotebookId);
-
-							me.addNoteHistory(noteOrContent.NoteId, noteOrContent.Content);
-						}
-					});
-				} else {
-					callback && callback(false);
-				}
+		// 新建的
+		if (!dbNote) {
+			if (!noteOrContent.IsNew) {
+				return callback && callback(false);
 			}
-			// 更新
-			else {
-				const updateFields = ['Desc', 'ImgSrc', 'Title', 'Tags', 'Content'];
-				const updates = {};
-				let needUpdate = false;
-				for (let i in updateFields) {
-					const field = updateFields[i];
-					if (field in noteOrContent) {
-						updates[field] = noteOrContent[field];
-						needUpdate = true;
-					}
-				}
-
-				if (needUpdate) {
-					let isDirty = false;
-					// 只有title, Content, Tags修改了才算是IsDirty
-					if ('Content' in updates && dbNote['Content'] !== updates['Content']) {
-						isDirty = true;
-						// console.error(' content not same');
-						// ContentIsDirty 才会发Content
-						updates['ContentIsDirty'] = true;
-
-					} else if ('Title' in updates && dbNote['Title'] !== updates['Title']) {
-						isDirty = true;
-						// console.error(' title not same');
-					} else if ('Tags' in updates) {
-						const dbTags = dbNote['Tags'] || [];
-						const nowTags = updates['Tags'] || [];
-						if (dbTags.join(',') !== nowTags.join(',')) {
-							isDirty = true;
-							// console.error(' tag not same');
-						}
-					}
-
-					// 没有任何修改
-					if (!isDirty) {
-						console.log('没有任何修改, 不保存');
-						return callback && callback(dbNote);
-					}
-
-					updates['IsDirty'] = isDirty;
-
-					updates['LocalIsDelete'] = false;
-
-					if (isDirty) {
-						updates.UpdatedTime = date;
-					}
-
-					// console.log('finally update:');
-					// console.log(updates);
-
-					// Set an existing field's value
-					db.notes.update({NoteId: noteOrContent.NoteId}, {$set: updates}, {}, function (err, numReplaced) {
-						if (err) {
-							callback && callback(false);
-						} else {
-							callback && callback(noteOrContent);
-
-							if ('Content' in updates) {
-
-								// 需要添加到历史记录中才加
-								if (needAddToHistory) {
-									me.addNoteHistory(noteOrContent.NoteId, noteOrContent.Content);
-								}
-							}
-						}
-					});
-				} else {
-					callback && callback(false);
-				}
+			if (!Common.isValidDate(noteOrContent.CreatedTime)) {
+				noteOrContent.CreatedTime = date;
 			}
-		});
+			noteOrContent['IsTrash'] = false;
+			delete noteOrContent['IsNew'];
+			noteOrContent['LocalIsNew'] = true;
+			try {
+				const newDoc = await p(db.notes, 'insert', noteOrContent);
+				// callback用到了noteOrContent.IsNew来做判断
+				noteOrContent['IsNew'] = true;
+				callback && callback(newDoc);
+				Notebook.reCountNotebookNumberNotes(noteOrContent.NotebookId);
+				me.addNoteHistory(noteOrContent.NoteId, noteOrContent.Content);
+			} catch (e) {
+				console.log(e);
+				callback && callback(false);
+			}
+			return;
+		}
+
+		// 更新
+		const updateFields = ['Desc', 'ImgSrc', 'Title', 'Tags', 'Content'];
+		const updates = {};
+		for (const field of updateFields) {
+			if (field in noteOrContent) {
+				updates[field] = noteOrContent[field];
+			}
+		}
+		if (!Object.keys(updates).length) {
+			return callback && callback(false);
+		}
+
+		let isDirty = false;
+		// 只有title, Content, Tags修改了才算是IsDirty
+		if ('Content' in updates && dbNote['Content'] !== updates['Content']) {
+			isDirty = true;
+			updates['ContentIsDirty'] = true;
+		} else if ('Title' in updates && dbNote['Title'] !== updates['Title']) {
+			isDirty = true;
+		} else if ('Tags' in updates) {
+			const dbTags = dbNote['Tags'] || [];
+			const nowTags = updates['Tags'] || [];
+			isDirty = dbTags.join(',') !== nowTags.join(',');
+		}
+
+		if (!isDirty) {
+			console.log('没有任何修改, 不保存');
+			return callback && callback(dbNote);
+		}
+
+		updates['IsDirty'] = true;
+		updates['LocalIsDelete'] = false;
+		updates.UpdatedTime = date;
+		try {
+			await p(db.notes, 'update', {NoteId: noteOrContent.NoteId}, {$set: updates}, {});
+			callback && callback(noteOrContent);
+			if ('Content' in updates && needAddToHistory) {
+				me.addNoteHistory(noteOrContent.NoteId, noteOrContent.Content);
+			}
+		} catch (e) {
+			callback && callback(false);
+		}
 	},
 
 	// 公开/取消为博客
