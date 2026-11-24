@@ -31,10 +31,14 @@ stub('db', db);
 stub('file', {});
 stub('evt', {});
 stub('user', { getCurActiveUserId: () => 'test-user' });
-stub('notebook', { reCountNotebookNumberNotes: () => events.push('recount') });
+stub('notebook', {
+    reCountNotebookNumberNotes: () => events.push('recount'),
+    getNotebookIdByServerNotebookId: (id, cb) => cb('local-nb')
+});
 stub('common', {
     isEmpty: (v) => !v || !v.length,
     objectId: () => 'new-id',
+    goNowToDate: (v) => v,
     splitFile: () => ({ nameNotExt: 'attach', getFullPath: () => 'new-path' }),
     copyFile: (src, dst, cb) => cb(true)
 });
@@ -69,6 +73,15 @@ function run(fn, ...args) {
     assert.deepStrictEqual(events, []);
     await run('addNoteHistory', 'n1', 'c2');
     assert.deepStrictEqual(events, ['history.update']);
+
+    // addNoteForce: attach mapped, insert before recount
+    const forced = await run('addNoteForce', {
+        NoteId: 'server-note',
+        NotebookId: 'server-nb',
+        Files: [{ IsAttach: true, FileId: 'f1' }]
+    });
+    assert.ok(forced && forced.ServerNoteId === 'server-note' && forced.NotebookId === 'local-nb');
+    assert.deepStrictEqual(events, ['notes.insert', 'recount']);
 
     // copyNoteForConfict: one attach copied
     Note.getNote = (id, cb) => cb({_id: id, NotebookId: 'nb', Attachs: [{Path: 'old-path', FileId: 'f1'}]});

@@ -759,65 +759,37 @@ const Note = {
 	// 添加笔记本, note object
 	// note是服务器传过来的, 需要处理下fix
 	// NoteId, ServerNoteId, NotebookId(本地的)
-	addNoteForce: function (note, callback) {
-		const me = this;
-		note.InitSync = true; // 刚同步完, 表示content, images, attach没有同步
+		addNoteForce: async function (note, callback) {
+		note.InitSync = true;
 		note.IsDirty = false;
 		note.LocalIsDelete = false;
-		// 这里, 悲剧, 一个大BUG, 应该和server端IsTrash一致,
-		// 不然同步的时候将IsTrash的笔记同步到非IsTrash, 2015/10/31 fixed 谢谢 3601提供的信息
-		// note.IsTrash = false;
-		if (typeof note.IsTrash == 'boolean') {
-			note.IsTrash = note.IsTrash;
-		} else {
-			note.IsTrash = false;
-		}
-
+		note.IsTrash = typeof note.IsTrash === 'boolean' ? note.IsTrash : false;
 		note.ServerNoteId = note.NoteId;
 		note.NoteId = Common.objectId();
-
 		note.CreatedTime = Common.goNowToDate(note.CreatedTime);
 		note.UpdatedTime = Common.goNowToDate(note.UpdatedTime);
 
-		// 附件操作
-		const files = note.Files || [];
 		const attachs = [];
-		for (let i in files) {
-			const file = files[i];
-			if (file.IsAttach) { // LocalFileId, FileId
+		for (const file of note.Files || []) {
+			if (file.IsAttach) {
 				file.ServerFileId = file.FileId;
-				file.FileId = file.ServerFileId; // 弄成一样的, 只是没有Path
+				file.FileId = file.ServerFileId;
 				attachs.push(file);
 			}
 		}
 		note.Attachs = attachs;
 		delete note['Files'];
 
-		Notebook.getNotebookIdByServerNotebookId(note.NotebookId, function (localNotebookId) {
-			note.NotebookId = localNotebookId;
-			db.notes.insert(note, function (err, newDoc) {   // Callback is optional
-				if (err) {
-					console.log(err);
-					callback && callback(false);
-				} else {
-					// console.log("?????????")
-					// console.log(note);
-					// console.log(note.CreatedTime);
-					callback && callback(newDoc);
-
-					// 添加到历史中
-					// 因为没有内容, 所以不用添加
-					// me.addNoteHistory(note.NoteId, note.Content);
-
-					// 重新统计
-					Notebook.reCountNotebookNumberNotes(note.NotebookId);
-
-					// 下载内容, 图片, 附件
-					// 添加时不要, 这个请求由前端发出
-					// me.syncContentAndImagesAndAttachs(newDoc, 2000);
-				}
-			});
-		});
+		const localNotebookId = await new Promise(resolve => Notebook.getNotebookIdByServerNotebookId(note.NotebookId, resolve));
+		note.NotebookId = localNotebookId;
+		try {
+			const newDoc = await p(db.notes, 'insert', note);
+			callback && callback(newDoc);
+			Notebook.reCountNotebookNumberNotes(note.NotebookId);
+		} catch (e) {
+			console.log(e);
+			callback && callback(false);
+		}
 	},
 
 	// send change后, 发现内容是一样的, 此时修改本地Usn和server的一样, 下次再push
