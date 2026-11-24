@@ -4,7 +4,6 @@ copyright: Copyright (c) Leanote
 
 files:
   - main.js
-  - preload.js
   - note.html
   - login.html
   - "src/**/*"

@@ -192,20 +192,6 @@ function _ajaxCallback(ret, successFunc, failureFunc) {
 }
 function _ajax(type, url, param, successFunc, failureFunc, async) {
 	Service.dispatch(url, param, successFunc);
-	/*
-	return $.ajax({
-		type: type,
-		url: url,
-		data: param,
-		async: async, // 是否异步
-		success: function(ret) {
-			_ajaxCallback(ret, successFunc, failureFunc);
-		},
-		error: function(ret) {
-			_ajaxCallback(ret, successFunc, failureFunc);
-		}
-	});
-	*/
 }
 
 /**

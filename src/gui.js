@@ -15,10 +15,7 @@ var gui = {
     getCurrentWindow: function() {
         return remote.getCurrentWindow();
     },
-    Shell: require('electron').shell,
-    on: function(type, callback) {
-
-    }
+    Shell: require('electron').shell
 };
 
 module.exports = gui;

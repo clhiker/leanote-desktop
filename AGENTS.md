@@ -23,11 +23,11 @@ npm run start:dev               # same, plus --devtools
 - **Main process** `main.js` — windows, IPC (`db-exec`, `db-init`, `openUrl`, `quit-app`, `show-tray`, `clipboard-read-image`), `leanote://` via `protocol.handle`; main-only helpers use the `*_main.js` suffix (`src/db_main.js`, `src/pdf_main.js`, `src/clipboard_main.js`).
 - **Renderer** `note.html` / `login.html` — no bundler; code is loaded via `<script>` tags, plugins via RequireJS in `public/plugins/`.
 - **Startup**: always loads `note.html` first; with no active user it switches to `login.html` through the renderer's `openUrl` IPC.
-- **`preload.js` is ineffective** — `contextIsolation: false` bypasses contextBridge; renderer services are globals from `<script>` tags, not `window.api` / `loadService`.
+- **No preload** — `preload.js` has been removed; renderer services are globals from `<script>` tags, not `window.api` / `loadService`.
 - **HTML-loaded scripts** (`src/browser/*.js`, `public/md/modern-markdown.js`): their `require()` paths resolve from the project root (`./src/...`, never `../`), and they use `var` for globals.
 - **DB**: nedb in the main process, proxied via `@electron/remote` IPC (see `src/nedb_proxy.js`).
 - **Security**: `nodeIntegration: true`, `contextIsolation: false` (legacy Electron patterns).
-- **Config**: runtime config is the tracked `public/config.js`; `config-default.js` is a template nothing reads.
+- **Config**: runtime config is the tracked `public/config.js`.
 - **i18n / themes**: locales in `public/langs/`; CSS sources in `public/themes/` (color themes swapped by rewriting `#theme` href to `public/themes/themes/<name>/theme.css`).
 
 ## Style

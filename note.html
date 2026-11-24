@@ -187,10 +187,6 @@ function log(o) {
 
           </div>
 
-          <!--
-          底下
-          用于同步
-          -->
           <div id="notebookBottom" class="clearfix">
             <div class="progress sync-progress hide" id="syncProgress">
               <div class="progress-bar"  role="progressbar" aria-valuenow="5" aria-valuemin="0" aria-valuemax="100" style="width: 5%;" id="syncProgressBar">
@@ -683,9 +679,5 @@ window.require = window.requireNode;
 <!-- 升级 -->
 <!-- nw.gui shim for electron (replaces https://leanote.com/js/app_electron.js) -->
 <script src="public/js/nw-gui-shim.js"></script>
-<script>
-// Service is already loaded by service.js script tag
-// window.Service = window.loadService();
-</script>
 </body>
 </html>

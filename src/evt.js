@@ -2,16 +2,6 @@ var fs = require('fs');
 const path = require('path')
 // var User = require('./user');
 
-// 为什么不存在?
-// var dataBasePath = require('nw.gui').App.dataPath; //  + '/data';
-/*
-// 判断是否存在, 不存在则创建dir
-if(!fs.existsSync(dataBasePath)) {
-	fs.mkdirSync(dataBasePath);
-}
-*/
-// dataBasePath = '';
-
 var Evt = {
 	defaultUrl: 'https://leanote.com',
 

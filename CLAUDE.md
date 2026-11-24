@@ -43,7 +43,7 @@ The night theme had several white background issues fixed in `public/themes/them
 
 ### note.html loadService() call
 
-Removed the `window.Service = window.loadService()` call in note.html. Service is already initialized as a global by service.js script tag; `loadService` was only exposed by preload.js which is not in use.
+Removed the `window.Service = window.loadService()` call in note.html. Service is already initialized as a global by the service.js script tag; the preload-based `loadService` has been removed.
 
 ### Emoji icon size in markdown preview
 
@@ -113,7 +113,7 @@ env -i HOME=$HOME DISPLAY=$DISPLAY WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
 
 - **Main process** (`main.js`): Creates BrowserWindow, manages IPC, runs NeDB proxy server, registers `leanote://` via `protocol.handle`. Debug flag: `--devtools`.
 - **Renderer process** (`login.html` / `note.html`): Runs with `nodeIntegration: true`, `contextIsolation: false`. Loads services via `<script>` tags, not bundled.
-- **Preload** (`preload.js`): Defined but **not effective** — `contextIsolation: false` means the contextBridge is bypassed. The preload imports `./src/browser/service` and exposes it via `loadService()`, but the renderer loads services directly via `<script>` tags instead.
+- **No preload**: `preload.js` was removed; services are globals from `<script>` tags, not `window.api` / `loadService`.
 
 ### Service Loading
 
@@ -169,7 +169,6 @@ NeDB operations are split across processes:
 | `src/tag.js` | Tag management |
 | `src/common.js` | Utilities (ObjectId, MD5, file I/O, date formatting) |
 | `src/web.js` | Bridges backend services to frontend UI, dispatches sync results |
-| `src/import.js` | Import from Evernote (ENEX), HTML, Leanote formats |
 | `src/gui.js` | Wraps `@electron/remote` APIs (Menu, dialog, Shell) |
 | `src/leanote_protocol.js` | Custom protocol for serving local files |
 | `src/pdf_main.js` | PDF export functionality (main process side) |
