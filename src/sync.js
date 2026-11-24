@@ -582,81 +582,55 @@ var Sync = {
 
     // 全量同步
     // callback(error, info)
-    fullSync: function(callback) {
-        var me = this;
+        fullSync: async function(callback) {
+        const me = this;
         me._stop = false;
         me._initSyncInfo();
         me.fullSyncStart = true;
 
-        User.getAllLastSyncState(function(lastUsn, notebookUsn, noteUsn, tagUsn) {
-            // 不可能会有lastUsn吧
-            if (lastUsn && lastUsn > 0) {
-                notebookUsn = -1;
-                noteUsn = -1;
-                tagUsn = -1;
-            }
+        const state = await new Promise(resolve => User.getAllLastSyncState((...args) => resolve(args)));
+        let [lastUsn, notebookUsn, noteUsn, tagUsn] = state;
+        if (lastUsn && lastUsn > 0) {
+            notebookUsn = -1;
+            noteUsn = -1;
+            tagUsn = -1;
+        }
+        notebookUsn = notebookUsn || -1;
+        noteUsn = noteUsn || -1;
+        tagUsn = tagUsn || -1;
+        console.log('fullSync ' + notebookUsn + ' ' + noteUsn + ' ' + tagUsn);
 
-            if (!notebookUsn) {
-                notebookUsn = -1;
-            }
-            if (!noteUsn) {
-                noteUsn = -1;
-            }
-            if (!tagUsn) {
-                tagUsn = -1;
-            }
+        const serverState = await new Promise(resolve => Api.getLastSyncState(resolve));
+        if (!Common.isOk(serverState)) {
+            console.error('    get Server LastSyncState error!!');
+            callback && callback(serverState, null);
+            return;
+        }
 
-            console.log('fullSync ' + notebookUsn + ' ' + noteUsn + ' ' + tagUsn);
-
-            Api.getLastSyncState(function(serverState) {
-                if (!Common.isOk(serverState)) {
-                    console.error('    get Server LastSyncState error!!');
-                    callback && callback(serverState, null);
-                    return;
-                }
-
-                // Web.syncNotebookFinish();
-                // 同步笔记本
-                me.syncNotebook(notebookUsn, function(ok) {
-                    if (ok) {
-                        // Web.syncNoteFinish();
-                        // console.log('------------------')
-                        // 同步笔记
-                        me.syncNote(noteUsn, function(ok) {
-                            if (ok) {
-                                // Web.syncTagFinish();
-                                // 同步标签
-                                me.syncTag(tagUsn, function(ok) {
-                                    if (ok) {
-                                        me.fullSyncStart = false;
-                                        // 更新上次同步时间
-                                        me.updateLastSyncState(function() {
-                                            // send changes
-                                            // me.sendChanges();
-                                            callback && callback(false, me._syncInfo);
-                                        });
-                                    } else {
-                                        me.fullSyncStart = false;
-                                        console.error('syncTag error....');
-                                        callback && callback({}, me._syncInfo);
-                                    }
-                                });
-                            } else {
-                                me.fullSyncStart = false;
-                                console.error('syncNote error.... 跳过tag');
-                                callback && callback({}, me._syncInfo);
-                            }
-                        });
-                    } else {
-                        me.fullSyncStart = false;
-                        console.error('syncNotebook error.... 跳过note,tag');
-                        callback && callback({}, me._syncInfo);
-                    }
-                });
-
-            });
-
-        });
+        const notebookOk = await new Promise(resolve => me.syncNotebook(notebookUsn, resolve));
+        if (!notebookOk) {
+            me.fullSyncStart = false;
+            console.error('syncNotebook error.... 跳过note,tag');
+            callback && callback({}, me._syncInfo);
+            return;
+        }
+        const noteOk = await new Promise(resolve => me.syncNote(noteUsn, resolve));
+        if (!noteOk) {
+            me.fullSyncStart = false;
+            console.error('syncNote error.... 跳过tag');
+            callback && callback({}, me._syncInfo);
+            return;
+        }
+        const tagOk = await new Promise(resolve => me.syncTag(tagUsn, resolve));
+        if (!tagOk) {
+            me.fullSyncStart = false;
+            console.error('syncTag error....');
+            callback && callback({}, me._syncInfo);
+            return;
+        }
+        me.fullSyncStart = false;
+        await new Promise(resolve => me.updateLastSyncState(resolve));
+        callback && callback(false, me._syncInfo);
     },
 
     // 处理同步好的之后的
@@ -759,16 +733,15 @@ var Sync = {
         // Web.syncProgress(0);
         Web.syncFinished(hasError);
     },
-    incrSync: function(again) {
+        incrSync: async function(again) {
         if (User.isLocal()) {
             console.log('no sync for local account');
             return;
         }
-        var me = this;
+        const me = this;
         me._stop = false;
         me._initSyncInfo();
 
-        // again表示重来
         if (!again && me.incrSyncStart) {
             console.log('上一sync未结束!!');
             return;
@@ -776,77 +749,59 @@ var Sync = {
 
         me.incrSyncStart = true;
         me.syncProcessStatus = 0;
-
         console.log('inc sync start');
         if (again) {
             console.log('again >>');
         } else {
-            me._reSyncAgainTimes = 0
+            me._reSyncAgainTimes = 0;
         }
 
-        // 得到当前LastSyncUsn
-        User.getLastSyncState(function(lastSyncUsn, lastSyncTime) {
-            console.log('%cstep1 getLastSyncState', 'color: #68bc7a')
+        const [lastSyncUsn] = await new Promise(resolve => User.getLastSyncState((usn, time) => resolve([usn, time])));
+        console.log('%cstep1 getLastSyncState', 'color: #68bc7a');
+        if (!lastSyncUsn) {
+            console.error('    getLastSyncState error!!');
+            me.setSyncFinished();
+            return;
+        }
 
-            // 没有上次同步的时间, 则需要进行一次全量同步, 不可能会发生
-            if (!lastSyncUsn) {
-                console.error('    getLastSyncState error!!');
-                me.setSyncFinished();
+        const serverState = await new Promise(resolve => Api.getLastSyncState(resolve));
+        if (!Common.isOk(serverState)) {
+            console.error('    get Server LastSyncState error!!');
+            me.setSyncFinished(true);
+            return;
+        }
+        console.log('    get Server LastSyncState ret', serverState.LastSyncUsn + ' ' + lastSyncUsn);
+
+        if (serverState.LastSyncUsn > lastSyncUsn) {
+            console.log('%cstep2 pull', 'color: #68bc7a');
+            const notebookOk = await new Promise(resolve => me.syncNotebook(lastSyncUsn, resolve));
+            if (!notebookOk) {
+                me.fixConflicts();
                 return;
             }
+            me.fixSyncedNotebook();
+            console.log('    incr notebook ok', lastSyncUsn);
+            me.addSyncProcessStatus(10);
+            console.log('    incr note start');
 
-            // 先从服务器上得到usn, 与本地的判断, 是否需要pull
-            Api.getLastSyncState(function(serverState) {
-                if (!Common.isOk(serverState)) {
-                    console.error('    get Server LastSyncState error!!');
-                    me.setSyncFinished(true);
-                    return;
-                }
-                console.log('    get Server LastSyncState ret', serverState.LastSyncUsn + ' ' + lastSyncUsn);
-                if (serverState.LastSyncUsn > lastSyncUsn) {
-                    // 需要同步笔记本
-                    console.log('%cstep2 pull', 'color: #68bc7a')
-                    // 同步笔记本
-                    me.syncNotebook(lastSyncUsn, function(ok) {
-                        if (ok) {
-                            me.fixSyncedNotebook();
-                            console.log('    incr notebook ok', lastSyncUsn);
-
-                            me.addSyncProcessStatus(10);
-                            console.log('    incr note start');
-
-                            // 同步笔记
-                            me.syncNote(lastSyncUsn, function(ok) {
-                                if (ok) {
-                                    console.log('    incr note ok', lastSyncUsn);
-                                    me.addSyncProcessStatus(30);
-                                    // 同步标签
-                                    me.syncTag(lastSyncUsn, function() {
-                                        console.log('    incr tag ok', lastSyncUsn);
-                                        me.addSyncProcessStatus(10);
-                                        // 更新上次同步时间
-                                        me.updateLastSyncState(function() {
-                                            // send changes
-                                            me.sendChanges(again);
-                                        });
-                                    });
-                                } else {
-                                    console.log('    incr note not ok')
-                                    me.fixConflicts();
-                                }
-                            });
-                        } else {
-                            me.fixConflicts();
-                        }
-                    });
-
-                } else {
-                    console.log('%cstep2 不需要pull, skip', 'color: #68bc7a')
-                    me.addSyncProcessStatus(50);
-                    me.sendChanges(again);
-                }
-            });
-        });
+            const noteOk = await new Promise(resolve => me.syncNote(lastSyncUsn, resolve));
+            if (!noteOk) {
+                console.log('    incr note not ok');
+                me.fixConflicts();
+                return;
+            }
+            console.log('    incr note ok', lastSyncUsn);
+            me.addSyncProcessStatus(30);
+            await new Promise(resolve => me.syncTag(lastSyncUsn, resolve));
+            console.log('    incr tag ok', lastSyncUsn);
+            me.addSyncProcessStatus(10);
+            await new Promise(resolve => me.updateLastSyncState(resolve));
+            me.sendChanges(again);
+        } else {
+            console.log('%cstep2 不需要pull, skip', 'color: #68bc7a');
+            me.addSyncProcessStatus(50);
+            me.sendChanges(again);
+        }
     },
 
     //---------
