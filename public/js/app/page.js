@@ -871,6 +871,17 @@ LeaAce = {
 
     // tinymce.setContent调用
     clearIntervalForInitAce: null,
+    debounceEachPre: function(editor, fn) {
+        if (this.clearIntervalForInitAce) {
+            clearInterval(this.clearIntervalForInitAce);
+        }
+        this.clearIntervalForInitAce = setTimeout(() => {
+            $(editor.getBody()).find('pre').each(function() {
+                const pre = $(this);
+                setTimeout(() => fn(pre));
+            });
+        }, 10);
+    },
     initAceFromContent: function(editor) {
         if (!this.canAndIsAce()) {
             var content = $(editor.getBody());
@@ -919,64 +930,30 @@ LeaAce = {
         if (!this.canAndIsAce()) {
             return;
         }
-        var me = this;
-        // 延迟
-        if (me.clearIntervalForInitAce) {
-            clearInterval(me.clearIntervalForInitAce);
-        }
-        me.clearIntervalForInitAce = setTimeout(function() {
-            var content = $(editor.getBody());
-            var pres = content.find('pre');
-            for (var i = 0; i < pres.length; ++i) {
-                var pre = pres.eq(i);
-                setTimeout((function(pre) {
-                    return function() {
-                        me.aceToPre(pre);
-                    }
-                })(pre));
-            }
-        }, 10);
+        this.debounceEachPre(editor, pre => this.aceToPre(pre));
     },
 
     undo: function(editor) {
         if (!this.canAndIsAce()) {
             return;
         }
-        var me = this;
-        // 延迟
-        if (this.clearIntervalForInitAce) {
-            clearInterval(this.clearIntervalForInitAce);
-        }
-        this.clearIntervalForInitAce = setTimeout(function() {
-            var content = $(editor.getBody());
-            var pres = content.find('pre');
-            for (var i = 0; i < pres.length; ++i) {
-                var pre = pres.eq(i);
-                setTimeout((function(pre) {
-                    return function() {
-                        var value = pre.html();
-                        var id = pre.attr('id');
-                        var aceEditor = me.getAce(id);
-                        if (aceEditor) {
-                            var value = aceEditor.getValue();
-                            aceEditor.destroy();
-                            var aceEditor = me.initAce(id, value);
-                            // 全不选
-                            aceEditor.selection.clearSelection();
-                        } else {
-                            value = value.replace(/ /g, "&nbsp;").replace(/\<br *\/*\>/gi, "\n");
-                            pre.html(value);
-                            var id = pre.attr('id');
-                            if (!id) {
-                                id = me.getAceId();
-                                pre.attr('id', id);
-                            }
-                            me.initAce(id);
-                        }
-                    }
-                })(pre));
+        this.debounceEachPre(editor, pre => {
+            const id = pre.attr('id');
+            const aceEditor = this.getAce(id);
+            if (aceEditor) {
+                const value = aceEditor.getValue();
+                aceEditor.destroy();
+                this.initAce(id, value).selection.clearSelection();
+            } else {
+                pre.html(pre.html().replace(/ /g, "&nbsp;").replace(/\<br *\/*\>/gi, "\n"));
+                let preId = pre.attr('id');
+                if (!preId) {
+                    preId = this.getAceId();
+                    pre.attr('id', preId);
+                }
+                this.initAce(preId);
             }
-        }, 10);
+        });
     },
     // tinymce.setContent调用, 表示在setContent之前先把之前的ace destroy掉
     // 很可能会有一些没有destroy的情况
@@ -1260,20 +1237,8 @@ var State = {
     // 什么时候调用? 关闭程序, 改变note时
     saveCurState: function(callback) {
         // 左侧, 开闭状态
-        var StarredOpened = false;
-        var NotebookOpened = false;
-        var TagOpened = false;
-        var $leftOpen = $('.folderNote.opened');
-        if ($leftOpen.length == 1) {
-            var id = $leftOpen.attr('id');
-            if (id == 'myStarredNotes') {
-                StarredOpened = true;
-            } else if (id == 'myNotebooks') {
-                NotebookOpened = true;
-            } else if (id == 'myTag') {
-                TagOpened = true;
-            }
-        }
+        const opened = $('.folderNote.opened');
+        const openedId = opened.length === 1 ? opened.attr('id') : '';
         // 当前笔记
         var CurNoteId = Note.curNoteId; // 当前打开的笔记
         var CurIsStarred = false; // 当前是在星下
@@ -1290,9 +1255,9 @@ var State = {
         CurNotebookId = Notebook.curNotebookId;
 
         var state = {
-            StarredOpened: StarredOpened,
-            NotebookOpened: NotebookOpened,
-            TagOpened: TagOpened,
+            StarredOpened: openedId === 'myStarredNotes',
+            NotebookOpened: openedId === 'myNotebooks',
+            TagOpened: openedId === 'myTag',
 
             CurNoteId: CurNoteId,
             CurIsStarred: CurIsStarred,
