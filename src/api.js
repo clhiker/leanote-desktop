@@ -114,36 +114,29 @@ var Api = {
 		});
 	},
 	// 登录
-	auth: function(email, pwd, host, callback) { 
-		var me = this;
-
-		// 设置server host
-		Evt.setHost(host);
-
-		// log({emai: email, pwd: pwd});
-		// console.log(this.getUrl('auth/login', {email: email, pwd: pwd}));
-		// console.log('????????????')
-		needle.post(this.getUrl('auth/login', {macAddr: macAddr, v: currentVersion}), {email: email, pwd: pwd}, {timeout: 10000}, function(error, response) {
-			me.checkError(error, response);
-			if(error) {
-				return callback && callback(false);
-			}
-			
-			// needle.get('http://localhost/phpinfo.php?email=xx', {emai: email, pwd: pwd}, function(error, response) {
-			var ret = response.body;
-			// 登录成功, 保存token
-			// console.log('login ret');
-			// console.log(ret);
-			if(Common.isOk(ret)) {
-				ret.Pwd = Common.md5(pwd, ret.UserId);
-				ret['Host'] = Evt.leanoteUrl;
-				// User.setCurUser(ret);
-				callback && callback(ret);
-			} else {
-				// console.log('log failed');
-				callback && callback(false);
-			}
+	_post: function(path, param, data, opts) {
+		const me = this;
+		return new Promise(resolve => {
+			needle.post(me.getUrl(path, param), data, opts || {}, (error, response) => {
+				me.checkError(error, response);
+				resolve({error, ret: response && response.body});
+			});
 		});
+	},
+	// 登录
+	auth: async function(email, pwd, host, callback) {
+		Evt.setHost(host);
+		const {error, ret} = await this._post('auth/login', {macAddr, v: currentVersion}, {email, pwd}, {timeout: 10000});
+		if (error) {
+			return callback && callback(false);
+		}
+		if (Common.isOk(ret)) {
+			ret.Pwd = Common.md5(pwd, ret.UserId);
+			ret['Host'] = Evt.leanoteUrl;
+			callback && callback(ret);
+		} else {
+			callback && callback(false);
+		}
 	},
 
 	logout: function (callback) {
@@ -314,98 +307,56 @@ var Api = {
 	// 笔记本操作
 	//------------
 	// 添加
-	addNotebook: function(notebook, callback) {
-		var me = this;
-		// notebook.ParentNotebookId是本的, 要得到远程的
-		Notebook.getServerNotebookIdByNotebookId(notebook.ParentNotebookId, function(serverNotebookId) {
-			var data = {
-				title: notebook.Title,
-				seq: notebook.Seq,
-				parentNotebookId: serverNotebookId
-			}
-			console.log('add notebook');
-			console.log(data, me.getUrl('notebook/addNotebook'));
-			needle.post(me.getUrl('notebook/addNotebook'), data, {}, function(err, resp) {
-				me.checkError(err, resp);
-				if(err) {
-					return callback(false);
-				}
-				var ret = resp.body;
-				console.log(ret);
-				if(Common.isOk(ret)) {
-					callback(ret);
-				} else {
-					callback(false);
-				}
-			});	
-		});
+	addNotebook: async function(notebook, callback) {
+		const serverNotebookId = await new Promise(resolve => Notebook.getServerNotebookIdByNotebookId(notebook.ParentNotebookId, resolve));
+		const data = {
+			title: notebook.Title,
+			seq: notebook.Seq,
+			parentNotebookId: serverNotebookId
+		};
+		console.log('add notebook');
+		const {error, ret} = await this._post('notebook/addNotebook', null, data, {});
+		if (error) {
+			return callback && callback(false);
+		}
+		callback && callback(Common.isOk(ret) ? ret : false);
 	},
 	// 更新
-	updateNotebook: function(notebook, callback) {
-		var me = this;
-		Notebook.getServerNotebookIdByNotebookId(notebook.ParentNotebookId, function(serverNotebookId) {
-			var data = {
-				notebookId: notebook.ServerNotebookId,
-				title: notebook.Title,
-				usn: notebook.Usn,
-				seq: notebook.Seq,
-				parentNotebookId: serverNotebookId || ""
-			}
-			log('update notebook');
-			log(data);
-			needle.post(me.getUrl('notebook/updateNotebook'), data, {}, function(err, resp) {
-				me.checkError(err, resp);
-				if(err) {
-					log('err');
-					log(err);
-					return callback(false);
-				}
-				var ret = resp.body;
-				log('update notebook ret:');
-				log(ret);
-				if(Common.isOk(ret)) {
-					callback(ret);
-				} else {
-					callback(false);
-				}
-			});
-		});
+	updateNotebook: async function(notebook, callback) {
+		const serverNotebookId = await new Promise(resolve => Notebook.getServerNotebookIdByNotebookId(notebook.ParentNotebookId, resolve));
+		const data = {
+			notebookId: notebook.ServerNotebookId,
+			title: notebook.Title,
+			usn: notebook.Usn,
+			seq: notebook.Seq,
+			parentNotebookId: serverNotebookId || ""
+		};
+		const {error, ret} = await this._post('notebook/updateNotebook', null, data, {});
+		if (error) {
+			return callback && callback(false);
+		}
+		callback && callback(Common.isOk(ret) ? ret : false);
 	},
 
 	// 删除
-	deleteNotebook: function(notebook, callback) {
-		var me = this;
-		var data = {notebookId: notebook.ServerNotebookId, usn: notebook.Usn};
-		log('delete notebook');
-		needle.post(me.getUrl('notebook/deleteNotebook'), data, {timeout: 10000}, function(err, resp) {
-			me.checkError(err, resp);
-			if(err) {
-				return callback(false);
-			}
-			var ret = resp.body;
-			log('delete notebook ret');
-			log(ret);
-			if(Common.isOk(ret)) {
-				// 以后不要再发了
-				Notebook.setNotDirty(notebook.NotebookId);
-				callback(ret);
+	deleteNotebook: async function(notebook, callback) {
+		const data = {notebookId: notebook.ServerNotebookId, usn: notebook.Usn};
+		const {error, ret} = await this._post('notebook/deleteNotebook', null, data, {timeout: 10000});
+		if (error) {
+			return callback && callback(false);
+		}
+		if (Common.isOk(ret)) {
+			Notebook.setNotDirty(notebook.NotebookId);
+			return callback && callback(ret);
+		}
+		callback && callback(false);
+		try {
+			if (ret.Msg == 'conflict') {
+				Notebook.setNotDirtyNotDelete(notebook.NotebookId);
 			} else {
-				callback(false);
-				try {
-					log('delete notebook conflict');
-					// 代表冲突了, 那么本地的删除无效, 设为IsDirty为false, 不删除
-					// 待以后同步
-					if(ret.Msg == 'conflict') {
-						log('delete notebook conflict: setNotDirtyNotDelete');
-						Notebook.setNotDirtyNotDelete(notebook.NotebookId);
-					} else {
-						log('delete notebook conflict: setNotDirty');
-						Notebook.setNotDirty(notebook.NotebookId);
-					}
-
-				} catch(e) {}
+				Notebook.setNotDirty(notebook.NotebookId);
 			}
-		});
+		} catch (e) {}
 	},
 
 	//---------
@@ -557,44 +508,27 @@ var Api = {
 	},
 
 	// 删除
-	deleteTrash: function(note, callback) {
-		var me = this;
-		var data = {noteId: note.ServerNoteId, usn: note.Usn};
-		log('delete note');
-		// 这里要重新require下, 不然为{}
+	deleteTrash: async function(note, callback) {
+		const data = {noteId: note.ServerNoteId, usn: note.Usn};
 		Note = require('./note');
-		needle.post(me.getUrl('note/deleteTrash'), data, {timeout: 10000}, function(err, resp) {
-			me.checkError(err, resp);
-			if(err) {
-				return callback(false);
-			}
-			var ret = resp.body;
-			console.error('delete note ret');
-			console.log('delete note ret');
-			console.log(ret);
-			if(Common.isOk(ret)) {
-				// 以后不要再发了
+		const {error, ret} = await this._post('note/deleteTrash', null, data, {timeout: 10000});
+		if (error) {
+			return callback && callback(false);
+		}
+		if (Common.isOk(ret)) {
+			Note.removeNote(note.NoteId);
+			return callback && callback(ret);
+		}
+		callback && callback(false);
+		try {
+			if (ret.Msg == 'conflict') {
+				Note.setNotDirtyNotDelete(note.NoteId);
+			} else if (ret.Msg == 'notExists') {
 				Note.removeNote(note.NoteId);
-				callback(ret);
 			} else {
-				callback(false);
-				try {
-					console.log('delete note conflict');
-					// 代表冲突了, 那么本地的删除无效, 设为IsDirty为false, 不删除
-					// 待以后同步
-					if(ret.Msg == 'conflict') {
-						console.log('delete note conflict: setNotDirtyNotDelete');
-						Note.setNotDirtyNotDelete(note.NoteId);
-					} else if(ret.Msg == 'notExists') {
-						console.log('delete note conflict: remove not exists');
-						Note.removeNote(note.NoteId);
-					} else {
-						console.log('delete note conflict: setNotDirty');
-						Note.setNotDirty(note.NoteId);
-					}
-				} catch(e) {}
+				Note.setNotDirty(note.NoteId);
 			}
-		});
+		} catch (e) {}
 	},
 
 	exportPdf: function(noteId, callback) {
@@ -635,35 +569,22 @@ var Api = {
 	},
 
 	// 添加标签
-	addTag: function(title, callback) {
-		var me = this;
-		needle.post(me.getUrl('tag/addTag'), {tag: title}, {}, function(err, resp) {
-			me.checkError(err, resp);
-			if(err) {
-				return callback && callback(false);
-			}
-			var ret = resp.body;
-			console.log('	add tag ret: ', ret);
-			if(Common.isOk(ret)) {
-				
-				callback && callback(ret);
-			} else {
-				callback && callback(false);
-			}
-		});
+	addTag: async function(title, callback) {
+		const {error, ret} = await this._post('tag/addTag', null, {tag: title}, {});
+		if (error) {
+			return callback && callback(false);
+		}
+		console.log('	add tag ret: ', ret);
+		callback && callback(Common.isOk(ret) ? ret : false);
 	},
 	// 删除标签
-	deleteTag: function(tag, callback) {
-		var me = this;
-		needle.post(me.getUrl('tag/deleteTag'), {tag: tag.Tag, usn: tag.Usn}, {timeout: 10000}, function(err, resp) {
-			me.checkError(err, resp);
-			if(err) {
-				return callback && callback(false);
-			}
-			var ret = resp.body;
-			console.log('	delete tag ret:', ret);
-			callback && callback(ret);
-		});
+	deleteTag: async function(tag, callback) {
+		const {error, ret} = await this._post('tag/deleteTag', null, {tag: tag.Tag, usn: tag.Usn}, {timeout: 10000});
+		if (error) {
+			return callback && callback(false);
+		}
+		console.log('	delete tag ret:', ret);
+		callback && callback(ret);
 	},
 
 
