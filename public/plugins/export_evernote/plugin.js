@@ -18,7 +18,7 @@ Before submitting HTML content over the EDAM API the client application is expec
 5. Validate href and src values to be valid URLs and protocols
 
  */
-define(function() {
+define(['../shared/export-flow'], function(Flow) {
     let async; //  = require('async');
     let enml; //  = nodeRequire('./public/plugins/export_evernote/enml');
 
@@ -107,33 +107,6 @@ define(function() {
             enml = nodeRequire('./public/plugins/export_evernote/enml');
 
             me._inited = true;
-        },
-
-        replaceAll: function (src, pattern, to) {
-            if (!src) {
-                return src;
-            }
-            while (true) {
-                const oldSrc = src;
-                src = src.replace(pattern, to);
-                if (oldSrc === src) {
-                    return src;
-                }
-            }
-        },
-
-        fixFilename: function (filename) {
-            const reg = new RegExp("[/#$!^*\' \"%&()+,:;<>=?@|\\\\]", 'g');
-            filename = filename.replace(reg, "-");
-            // 防止出现两个连续的-
-            while (filename.indexOf('--') !== -1) {
-                filename = this.replaceAll(filename, '--', '-');
-            }
-            if (filename.length > 1) {
-                // 最后一个-
-                filename = filename.replace(/-$/, '');
-            }
-            return filename;
         },
 
         getEvernoteTime: function (t) {
@@ -379,47 +352,6 @@ define(function() {
             });
         },
 
-        // 得到可用的文件名, 避免冲突
-        getExportedFilePath: function (pathInfo, n, cb) {
-            const me = this;
-            if (n > 1) {
-                pathInfo.nameNotExt = pathInfo.nameNotExtRaw + '-' + n;
-            }
-            const absPath = pathInfo.getFullPath();
-
-            // Api.NodeFs.existsSync(absPath) 总是返回false, 不知道什么原因
-            // 在控制台上是可以的
-            Api.NodeFs.exists(absPath, function (exists) {
-                if (!exists) {
-                    cb(absPath);
-                } else {
-                    me.getExportedFilePath(pathInfo, n + 1, cb);
-                }
-            });
-        },
-
-        getTargetPath: function (callback) {
-            // showSaveDialog 不支持property选择文件夹
-            const po = Api.gui.dialog.showOpenDialog(
-                Api.gui.getCurrentWindow(), {
-                    defaultPath: Api.getDefaultPath(),
-                    properties: ['openDirectory']
-                }
-            );
-
-            if (typeof (po) != "object") {
-                return;
-            }
-
-            po.then(function (re) {
-                if (re.canceled !== false || re.filePaths.length < 1) {
-                    return callback();
-                }
-                Api.saveLastPath(re.filePaths[0])
-                callback(re.filePaths[0]);
-            });
-        },
-
         loadingIsClosed: false,
 
         exportEvernoteForNotebook: function (notebookId) {
@@ -437,7 +369,7 @@ define(function() {
                 // 直接获取笔记本信息
                 let notebook = Api.notebook.getNotebook(notebookId);
                 // 创建以笔记本名称命名的子文件夹
-                let notebookName = me.fixFilename(notebook.Title);
+                let notebookName = Flow.fixFilename(notebook.Title);
                 let newPath = targetPath + '/' + notebookName;
 
                 // 检查目标路径是否存在同名文件或文件夹
@@ -451,7 +383,7 @@ define(function() {
                             message: '目录 "' + notebookName + '" 已存在，请选择其他目录保存。'
                         });
                         // 重新调用getTargetPath让用户选择新目录
-                        me.getTargetPath(function (newTargetPath) {
+                        Flow.chooseDir(function (newTargetPath) {
                             tryExport(newTargetPath);
                         });
                         return;
@@ -472,7 +404,7 @@ define(function() {
                     onClose: function () {
                         me.loadingIsClosed = true;
                         setTimeout(function () {
-                            me.hideLoading();
+                            Flow.hideLoading();
                         });
                     }
                 });
@@ -501,7 +433,7 @@ define(function() {
                             let processed = 0;
                             children.forEach(function (child) {
                                 // 为子笔记本创建文件夹
-                                let childPath = currentPath + '/' + me.fixFilename(child.Title);
+                                let childPath = currentPath + '/' + Flow.fixFilename(child.Title);
                                 try {
                                     if (!Api.NodeFs.existsSync(childPath)) {
                                         Api.NodeFs.mkdirSync(childPath);
@@ -531,7 +463,7 @@ define(function() {
                     async.eachSeries(result.notes, function (note, cb) {
                         if (me.loadingIsClosed) {
                             cb();
-                            me.hideLoading();
+                            Flow.hideLoading();
                             return;
                         }
                         i++;
@@ -545,7 +477,7 @@ define(function() {
                             let path = [];
                             let current = noteNotebook;
                             while (current && current.NotebookId !== notebookId) {
-                                path.unshift(me.fixFilename(current.Title));
+                                path.unshift(Flow.fixFilename(current.Title));
                                 // 使用 ParentNotebookId 获取父笔记本
                                 current = Api.notebook.getNotebook(current.ParentNotebookId);
                             }
@@ -556,22 +488,16 @@ define(function() {
                             cb();
                         }, i, total);
                     }, function () {
-                        me.hideLoading();
+                        Flow.hideLoading();
                         Notify.show({title: 'Info', body: getMsg('plugin.export_evernote.exportSuccess')});
                     });
                 });
             }
 
             // 初始调用
-            me.getTargetPath(function (targetPath) {
+            Flow.chooseDir(function (targetPath) {
                 tryExport(targetPath);
             });
-        },
-
-        hideLoading: function () {
-            setTimeout(function () {
-                Api.loading.hide();
-            }, 1000);
         },
 
         exportEvernote: function (noteIds) {
@@ -579,7 +505,7 @@ define(function() {
             if (!noteIds || noteIds.length === 0) {
                 return;
             }
-            me.getTargetPath(function (targetPath) {
+            Flow.chooseDir(function (targetPath) {
                 if (!targetPath) {
                     return;
                 }
@@ -591,7 +517,7 @@ define(function() {
                     onClose: function () {
                         me.loadingIsClosed = true;
                         setTimeout(function () {
-                            me.hideLoading();
+                            Flow.hideLoading();
                         });
                     }
                 });
@@ -615,7 +541,7 @@ define(function() {
                     });
 
                 }, function () {
-                    me.hideLoading();
+                    Flow.hideLoading();
                     Notify.show({title: 'Info', body: getMsg('plugin.export_evernote.exportSuccess')});
                 });
             });
@@ -638,18 +564,18 @@ define(function() {
             }, 100);
 
             let name = note.Title ? note.Title + '.enex' : getMsg('Untitled') + '.enex';
-            name = me.fixFilename(name);
+            name = Flow.fixFilename(name);
 
             const targetPath = path + Api.commonService.getPathSep() + name;
 
             // 将路径和名字区分开
             const pathInfo = Api.commonService.splitFile(targetPath);
-            pathInfo.nameNotExt = me.fixFilename(pathInfo.nameNotExt); // 重新修正一次
+            pathInfo.nameNotExt = Flow.fixFilename(pathInfo.nameNotExt); // 重新修正一次
             const nameNotExt = pathInfo.nameNotExt;
             pathInfo.nameNotExtRaw = pathInfo.nameNotExt;
 
             // 得到可用文件的绝对路径
-            me.getExportedFilePath(pathInfo, 1, function (absEvernoteFilePath) {
+            Flow.uniqueFile(pathInfo, 1, function (absEvernoteFilePath) {
                 me.render(note, function (content) {
                     Api.commonService.writeFile(absEvernoteFilePath, content);
                     callback();
@@ -660,34 +586,9 @@ define(function() {
         // 打开前要执行的
         onOpen: function () {
             const me = this;
-            const gui = Api.gui;
-
-            const menu = {
-                label: Api.getMsg('plugin.export_evernote.export'),
-                enabled: function (noteIds) {
-                    return true;
-                },
-                click: (function () {
-                    return function (noteIds) {
-                        me.init();
-                        me.exportEvernote(noteIds);
-                    }
-                })()
-            };
-            Api.addExportMenu(menu);
-
-            Api.addExportMenuForNotebook({
-                label: Api.getMsg('plugin.export_evernote.export'),
-                enabled: function (notebookId) {
-                    return true;
-                },
-                click: (function () {
-                    return function (notebookId) {
-                        me.init();
-                        me.exportEvernoteForNotebook(notebookId);
-                    }
-                })()
-            });
+            Flow.registerExportMenu(me, 'plugin.export_evernote.export',
+                noteIds => me.exportEvernote(noteIds),
+                notebookId => me.exportEvernoteForNotebook(notebookId));
         },
         // 打开后
         onOpenAfter: function () {
