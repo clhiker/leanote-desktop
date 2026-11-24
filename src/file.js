@@ -120,19 +120,6 @@ var File = {
 		});
 	},
 
-	getFileBase64: function(filePath) {
-		try {
-			// read binary data
-		    var bitmap = fs.readFileSync(filePath);
-		    if (!bitmap) {
-		    	return '';
-		    }
-		    return Buffer.from(bitmap).toString('base64');
-		} catch(e) {
-			return '';
-		}
-	},
-
 	getFileBase64AndMd5: function(filePath) {
 		try {
 			// read binary data
@@ -150,22 +137,6 @@ var File = {
 
 			return {base64: base64, md5: md5}
 
-		} catch(e) {
-			return '';
-		}
-	},
-
-	getFileMd5: function (filePath) {
-		try {
-		    var bitmap = fs.readFileSync(filePath);
-		    if (!bitmap) {
-		    	return;
-		    }
-			var hash = crypto.createHash('md5');
-			hash.setEncoding('hex');
-			hash.write(bitmap);
-			hash.end();
-			return hash.read();
 		} catch(e) {
 			return '';
 		}
@@ -260,79 +231,6 @@ var File = {
 		}); 
 	},
 	// FileReaderWeb 是 web上的FileReader, 可能与nodejs这个有冲突
-	pasteImage: function(event, FileReaderWeb, callback) {
-		var me = this;
-		var items = (event.clipboardData  || event.originalEvent.clipboardData).items; // 可能有多个file, 找到属于图片的file
-		// find pasted image among pasted items
-		var blob;
-	    for (var i = 0; i < items.length; i++) {
-	    	if (items[i].type.indexOf("image") === 0) {
-	    		blob = items[i].getAsFile();
-		    }
-		}
-		// console.log("paste images");
-		console.log(blob);
-		// load image if there is a pasted image
-		if (blob) {
-			try {
-				// console.log("??");
-			    var reader = new FileReaderWeb();
-			    // console.log(">>")
-			    // return;
-			    // console.log(">>")
-			    /*
-			    reader.onloadend = function() { 
-			    	console.log(reader);
-					// 这个事件在读取结束后，无论成功或者失败都会触发
-					if (reader.error) { 
-						console.log(reader.error); 
-					} else {
-					}
-				};
-				console.log("-----------");
-			    reader.onload = function(e) {
-			    	// alert(3);
-			    	console.log('haha');
-			    	return;
-			      	// 上传之
-			      	// log('result');
-			      	// log(reader.result);
-			      	var ret = reader.result;
-			      	ret = ret.replace(/^data:image\/\w+;base64,/, "");
-			      	console.log(ret);
-			      	return;
-			      	// log(User.getCurUserImagesPath());
-			      	var filename = Common.uuid() + '.png';
-			      	var filePath = User.getCurUserImagesPath() + '/' + filename;
-			      	console.log(filePath);
-			      	return;
-					fs.writeFile(filePath, Buffer.from(ret, 'base64'), function(err) {
-						if(err) {
-							log(err);
-							return;
-						}
-						// 保存
-						// var relativePath = User.getCurUserImagesAppPath() + '/' + filename;
-						// 保存到数据库中
-						File.addImage(filePath, function(newImg) {
-							callback && callback(Evt.getImageLocalUrl(newImg.FileId));
-							// callback && callback('app://leanote/' + relativePath);
-						});
-					}); 
-			    };
-			    */
-			    console.log(reader);
-			    console.log("??");
-			    reader.onloadend = function() { 
-			    	console.log('end');
-				    console.log(reader.result);
-			    };
-			    reader.readAsDataURL(blob);
-			} catch(e) {
-				console.log(e);
-			}
-		};
-	},
 
 	// path是相对于项目路径
 	addImage: function(path, callback) {
@@ -604,31 +502,6 @@ var File = {
 
 		callback && callback(targets);
 	},
-	// 删除不存在的attachs
-	deleteNotExistsAttach: function(noteId, attachs) {
-		var me = this;
-		// console.log('--');
-		db.attachs.find({NoteId: noteId}, function(err, everAttachs) { 
-			if(err) {
-				return;
-			}
-			var nowMap = {};
-			for(var i in attachs) {
-				nowMap[attachs[i].FileId] = attachs[i];
-			}
-			var fileBasePath = User.getCurUserAttachsPath();
-			for(var i in everAttachs) {
-				var attach = everAttachs[i];
-				if(!nowMap[attach.FileId]) { // 如果不在, 则删除之
-					db.attachs.remove({FileId: attach.FileId});
-					// 删除源文件, 别删错了啊
-					if(attach.Path.indexOf(fileBasePath) >= 0) {
-						fs.unlink(attach.Path);
-					}
-				}
-			}
-		});
-	},
 
 	// 下载图片, 本地的, 或外站的
 	downloadImg: function(src, callback) {
@@ -746,27 +619,6 @@ var File = {
 	},
 
 	// 复制外站图片
-	copyOtherSiteImage: function(src, callback) {
-		var me = this;
-		console.log('copyOtherSiteImage');
-		console.log(src);
-		me.downloadImg(src, function (filePath) {
-			console.log(filePath);
-			if (filePath) {
-				me._addImage(Common.objectId(), filePath, function(file) {
-					if (file) {
-						callback(Evt.getImageLocalUrl(file.FileId));
-					}
-					else {
-						callback(false);
-					}
-				});
-			}
-			else {
-				callback(false);
-			}
-		});
-	}
 };
 
 module.exports = File; 

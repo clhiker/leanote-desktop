@@ -70,13 +70,6 @@ var Import = {
     return content;
   },
 
-  writeTest: function() {
-    var path = '/Users/life/Desktop/1428226025985_2.png.txt';
-    fs.readFile(path, function(err, xml) {
-      Api.fileService.writeBase64(xml+"", true, 'png', 'a.png', function(file) {
-      });
-    });
-  },
 
   // 20150206T031506Z
   parseEvernoteTime: function (str) {

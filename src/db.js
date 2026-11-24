@@ -40,20 +40,6 @@ const db = {
         dbClient.init(curUser, baseDBPath);
     },
 
-    // 过时
-    init: function () {
-        const me = this;
-        const dbNames = ['users', 'notebooks', 'notes', 'tags', /*'images',*/ 'attachs', 'noteHistories', 'g'];
-        this.initIt(me, dbNames);
-    },
-
-    // 过时
-    initForLogin: function () {
-        const me = this;
-        // var dbNames = ['users'];
-        const dbNames = ['users', 'notebooks', 'notes', 'tags', 'noteHistories'];
-        this.initIt(me, dbNames);
-    },
 
     // map, 最后的db设到map里
     // forceAutoload 是否强制加载
