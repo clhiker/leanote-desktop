@@ -1,0 +1,160 @@
+/* Modern login page. Loaded after login.css and windows.css. */
+
+html.ui-modern {
+    --m-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Inter,
+        "Helvetica Neue", Arial, "Noto Sans", "PingFang SC", "Hiragino Sans GB",
+        "Microsoft YaHei", "Noto Sans CJK SC", "Source Han Sans SC", "WenQuanYi Micro Hei", sans-serif;
+    --m-canvas: #f7f7f5;
+    --m-surface: #ffffff;
+    --m-surface-muted: #f1f1ef;
+    --m-surface-hover: rgba(55, 53, 47, 0.06);
+    --m-border: #e7e7e4;
+    --m-text: #37352f;
+    --m-text-secondary: #6f6e69;
+    --m-text-tertiary: #9b9a97;
+    --m-accent: #2383e2;
+    --m-accent-hover: #1a73d1;
+    --m-accent-contrast: #ffffff;
+    --m-danger: #e03e3e;
+    --m-shadow-md: 0 4px 12px rgba(15, 15, 15, 0.08);
+    --m-radius-md: 6px;
+    --m-radius-lg: 8px;
+    --m-radius-xl: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+    html.ui-modern {
+        --m-canvas: #191919;
+        --m-surface: #212121;
+        --m-surface-muted: #2a2a2a;
+        --m-surface-hover: rgba(255, 255, 255, 0.06);
+        --m-border: #2f2f2f;
+        --m-text: #e9e9e7;
+        --m-text-secondary: #a3a29e;
+        --m-text-tertiary: #6f6e69;
+        --m-accent: #4f9cf9;
+        --m-accent-hover: #6cb0ff;
+        --m-accent-contrast: #0b1620;
+        --m-danger: #ff7369;
+        --m-shadow-md: 0 8px 24px rgba(0, 0, 0, 0.55);
+    }
+}
+
+html.ui-modern,
+html.ui-modern body {
+    background-color: var(--m-canvas);
+}
+
+html.ui-modern *:not(.fa) {
+    font-family: var(--m-font-sans);
+}
+
+html.ui-modern body {
+    color: var(--m-text);
+}
+
+html.ui-modern body #container {
+    width: 268px;
+    height: 346px;
+    margin: 5px auto;
+    background: var(--m-surface);
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-xl);
+    box-shadow: var(--m-shadow-md);
+    overflow: hidden;
+}
+
+html.ui-modern #box {
+    color: var(--m-text);
+}
+
+html.ui-modern #loadingLogo .logo {
+    opacity: 1;
+}
+
+html.ui-modern .faq {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern .faq:hover {
+    color: var(--m-accent);
+}
+
+html.ui-modern .formContainer {
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-lg);
+    background: var(--m-surface);
+}
+
+html.ui-modern .formContainer .form-group-1 {
+    border-bottom: 1px solid var(--m-border);
+}
+
+html.ui-modern input,
+html.ui-modern .form-control {
+    height: 40px;
+    padding: 10px 16px;
+    background: transparent;
+    color: var(--m-text);
+    font-size: 13px;
+}
+
+html.ui-modern input::placeholder,
+html.ui-modern .form-control::placeholder {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern .formContainer:focus-within {
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.12);
+}
+
+html.ui-modern .form-control:focus {
+    box-shadow: none;
+}
+
+html.ui-modern .btn-embeded {
+    border-radius: var(--m-radius-lg);
+    background: var(--m-accent);
+}
+
+html.ui-modern .btn-embeded .fa {
+    color: var(--m-accent-contrast);
+}
+
+html.ui-modern .btn-embeded:hover {
+    background: var(--m-accent-hover);
+}
+
+html.ui-modern .btn-embeded[disabled] {
+    background: var(--m-surface-muted);
+}
+
+html.ui-modern .btn-embeded[disabled] .fa {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #loginMsg {
+    color: var(--m-danger);
+    font-size: 12px;
+}
+
+html.ui-modern .boxForm .btns a {
+    color: var(--m-text-tertiary);
+    font-size: 12px;
+}
+
+html.ui-modern .bottom a {
+    color: var(--m-text-secondary);
+    font-size: 12px;
+}
+
+html.ui-modern .bottom a:hover {
+    color: var(--m-accent);
+}
+
+@media (prefers-color-scheme: dark) {
+    html.ui-modern #loadingLogo .logo {
+        filter: brightness(0) invert(1);
+    }
+}
