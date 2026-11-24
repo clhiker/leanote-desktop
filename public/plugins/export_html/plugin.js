@@ -4,7 +4,7 @@
  * 选择目录, 将图片保存到文件夹中, 有个html文件(以笔记名命名)
  * 注意, fs.existsSync总返回false, readFileSync可用
  */
-define(function() {
+define(['../shared/export-flow'], function(Flow) {
     let async; // = require('async');
 
     return {
@@ -79,33 +79,6 @@ define(function() {
             return tpl;
         },
 
-        replaceAll: function (src, pattern, to) {
-            if (!src) {
-                return src;
-            }
-            while (true) {
-                const oldSrc = src;
-                src = src.replace(pattern, to);
-                if (oldSrc === src) {
-                    return src;
-                }
-            }
-        },
-
-        fixFilename: function (filename) {
-            const reg = new RegExp("[/#$!^*\' \"%&()+,:;<>=?@|\\\\]", 'g');
-            filename = filename.replace(reg, "-");
-            // 防止出现两个连续的-
-            while (filename.indexOf('--') !== -1) {
-                filename = this.replaceAll(filename, '--', '-');
-            }
-            if (filename.length > 1) {
-                // 最后一个-
-                filename = filename.replace(/-$/, '');
-            }
-            return filename;
-        },
-
         // 写图片,并替换图片路径
         writeFiles: function (filesPath, content, callback) {
             const me = this;
@@ -129,7 +102,7 @@ define(function() {
                         if (imagePath) {
                             const distFileName = fileId + '.png';
                             Api.commonService.copyFile(imagePath, filesPath + '/' + distFileName, function (ok) {
-                                content = me.replaceAll(content, url, dirName + '/' + distFileName);
+                                content = Flow.replaceAll(content, url, dirName + '/' + distFileName);
                                 cb();
                             });
                         } else {
@@ -143,54 +116,6 @@ define(function() {
                 return;
             }
             callback(content);
-        },
-
-        // 得到存放images, js, css的路径
-        getAssetsPath: function (basePath, nameNotExt, n, cb) {
-            const me = this;
-            let absPath = basePath + Api.commonService.getPathSep() + nameNotExt + '_files';
-            if (n > 1) {
-                absPath += '-' + n;
-            }
-            Api.NodeFs.exists(absPath, function (exists) {
-                if (!exists) {
-                    cb(absPath);
-                } else {
-                    me.getAssetsPath(basePath, nameNotExt, n + 1, cb);
-                }
-            });
-        },
-
-        // 得到可用的文件名, 避免冲突
-        getHtmlFilePath: function (pathInfo, n, cb) {
-            const me = this;
-            if (n > 1) {
-                pathInfo.nameNotExt = pathInfo.nameNotExtRaw + '-' + n;
-            }
-            const absPath = pathInfo.getFullPath();
-
-            // Api.NodeFs.existsSync(absPath) 总是返回false, 不知道什么原因
-            // 在控制台上是可以的
-            Api.NodeFs.exists(absPath, function (exists) {
-                if (!exists) {
-                    cb(absPath);
-                } else {
-                    me.getHtmlFilePath(pathInfo, n + 1, cb);
-                }
-            });
-        },
-
-        getTargetPath: function (callback) {
-            Api.gui.dialog.showOpenDialog(Api.gui.getCurrentWindow(), {
-                defaultPath: Api.getDefaultPath(),
-                properties: ['openDirectory']
-            }).then(function (re) {
-                if (re.canceled !== false || re.filePaths.length < 1) {
-                    return callback();
-                }
-                Api.saveLastPath(re.filePaths[0])
-                callback(re.filePaths[0]);
-            });
         },
 
         loadingIsClosed: false,
@@ -210,7 +135,7 @@ define(function() {
                 // 直接获取笔记本信息
                 let notebook = Api.notebook.getNotebook(notebookId);
                 // 创建以笔记本名称命名的子文件夹
-                let notebookName = me.fixFilename(notebook.Title);
+                let notebookName = Flow.fixFilename(notebook.Title);
                 let newPath = targetPath + '/' + notebookName;
 
                 // 检查目标路径是否存在同名文件或文件夹
@@ -224,7 +149,7 @@ define(function() {
                             message: '目录 "' + notebookName + '" 已存在，请选择其他目录保存。'
                         });
                         // 重新调用getTargetPath让用户选择新目录
-                        me.getTargetPath(function (newTargetPath) {
+                        Flow.chooseDir(function (newTargetPath) {
                             tryExport(newTargetPath);
                         });
                             return;
@@ -238,18 +163,7 @@ define(function() {
                     return;
                 }
 
-                me.loadingIsClosed = false;
-                Api.loading.show(Api.getMsg('plugin.export_html.Exporting'), {
-                    hasProgress: true,
-                    isLarge: true,
-                    onClose: function () {
-                        me.loadingIsClosed = true;
-                        setTimeout(function () {
-                            me.hideLoading();
-                        });
-                    }
-                });
-                Api.loading.setProgress(1);
+                Flow.startLoading(me, 'plugin.export_html.Exporting');
 
                 // 递归处理笔记本及其子笔记本
                 function processNotebook(notebookId, currentPath) {
@@ -274,7 +188,7 @@ define(function() {
                             let processed = 0;
                             children.forEach(function (child) {
                                 // 为子笔记本创建文件夹
-                                let childPath = currentPath + '/' + me.fixFilename(child.Title);
+                                let childPath = currentPath + '/' + Flow.fixFilename(child.Title);
                             try {
                                     if (!Api.NodeFs.existsSync(childPath)) {
                                         Api.NodeFs.mkdirSync(childPath);
@@ -304,7 +218,7 @@ define(function() {
                     async.eachSeries(result.notes, function (note, cb) {
                         if (me.loadingIsClosed) {
                             cb();
-                            me.hideLoading();
+                            Flow.hideLoading();
                             return;
                         }
                         i++;
@@ -318,7 +232,7 @@ define(function() {
                             let path = [];
                             let current = noteNotebook;
                             while (current && current.NotebookId !== notebookId) {
-                                path.unshift(me.fixFilename(current.Title));
+                                path.unshift(Flow.fixFilename(current.Title));
                                 // 使用 ParentNotebookId 获取父笔记本
                                 current = Api.notebook.getNotebook(current.ParentNotebookId);
                             }
@@ -329,22 +243,16 @@ define(function() {
                             cb();
                         }, i, total);
                     }, function () {
-                        me.hideLoading();
+                        Flow.hideLoading();
                         Notify.show({title: 'Info', body: getMsg('plugin.export_html.exportSuccess')});
                     });
                 });
             }
 
             // 初始调用
-            me.getTargetPath(function (targetPath) {
+            Flow.chooseDir(function (targetPath) {
                 tryExport(targetPath);
             });
-        },
-
-        hideLoading: function () {
-            setTimeout(function () {
-                Api.loading.hide();
-            }, 1000);
         },
 
         exportHTML: function (noteIds) {
@@ -352,23 +260,12 @@ define(function() {
             if (!noteIds || noteIds.length === 0) {
                 return;
             }
-            me.getTargetPath(function (targetPath) {
+            Flow.chooseDir(function (targetPath) {
                 if (!targetPath) {
                     return;
                 }
 
-                me.loadingIsClosed = false;
-                Api.loading.show(Api.getMsg('plugin.export_html.Exporting'), {
-                    hasProgress: true,
-                    isLarge: true,
-                    onClose: function () {
-                        me.loadingIsClosed = true;
-                        setTimeout(function () {
-                            me.hideLoading();
-                        });
-                    }
-                });
-                Api.loading.setProgress(1);
+                Flow.startLoading(me, 'plugin.export_html.Exporting');
 
                 let i = 0;
                 const total = noteIds.length;
@@ -389,7 +286,7 @@ define(function() {
                     });
 
                 }, function () {
-                    me.hideLoading();
+                    Flow.hideLoading();
                     Notify.show({title: 'Info', body: getMsg('plugin.export_html.exportSuccess')});
                 });
             });
@@ -412,20 +309,20 @@ define(function() {
             }, 100);
 
             let name = note.Title ? note.Title + '.html' : getMsg('Untitled') + '.html';
-            name = me.fixFilename(name);
+            name = Flow.fixFilename(name);
 
             const targetPath = path + Api.commonService.getPathSep() + name;
 
             // 将路径和名字区分开
             const pathInfo = Api.commonService.splitFile(targetPath);
-            pathInfo.nameNotExt = me.fixFilename(pathInfo.nameNotExt); // 重新修正一次
+            pathInfo.nameNotExt = Flow.fixFilename(pathInfo.nameNotExt); // 重新修正一次
             const nameNotExt = pathInfo.nameNotExt;
             pathInfo.nameNotExtRaw = pathInfo.nameNotExt;
 
             // 得到可用文件的绝对路径
-            me.getHtmlFilePath(pathInfo, 1, function (absHtmlFilePath) {
+            Flow.uniqueFile(pathInfo, 1, function (absHtmlFilePath) {
                 // 得到存放assets的目录
-                me.getAssetsPath(pathInfo.path, pathInfo.nameNotExt, 1, function (absFilesPath) {
+                Flow.uniqueAssets(pathInfo.path, pathInfo.nameNotExt, 1, function (absFilesPath) {
                     // alert(absHtmlFilePath + ' --- ' + absFilesPath);
                     const html = me.render(note);
                     // 写图片
@@ -441,34 +338,9 @@ define(function() {
         // 打开前要执行的
         onOpen: function () {
             const me = this;
-            const gui = Api.gui;
-
-            const menu = {
-                label: Api.getMsg('plugin.export_html.export'),
-                enabled: function (noteIds) {
-                    return true;
-                },
-                click: (function () {
-                    return function (noteIds) {
-                        me.init();
-                        me.exportHTML(noteIds);
-                    }
-                })()
-            };
-            Api.addExportMenu(menu);
-
-            Api.addExportMenuForNotebook({
-                label: Api.getMsg('plugin.export_html.export'),
-                enabled: function (notebookId) {
-                    return true;
-                },
-                click: (function () {
-                    return function (notebookId) {
-                        me.init();
-                        me.exportHTMLForNotebook(notebookId);
-                    }
-                })()
-            });
+            Flow.registerExportMenu(me, 'plugin.export_html.export',
+                noteIds => me.exportHTML(noteIds),
+                notebookId => me.exportHTMLForNotebook(notebookId));
         },
         // 打开后
         onOpenAfter: function () {
