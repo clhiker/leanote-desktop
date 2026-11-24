@@ -36,74 +36,54 @@ User = {
 	local: null,
 
 	// 注销
-	logout: function (callback) {
-		var me = this;
-		function u(callback) {
-			db.users.update({_id: me.userId}, {$set:{IsActive: false}}, function () {
-				callback();
-			});
-		}
+		logout: async function (callback) {
+		const me = this;
+		const deactivate = async () => {
+			await p(db.users, 'update', {_id: me.userId}, {$set: {IsActive: false}}).catch(() => {});
+			callback && callback();
+		};
 		if (me.isLocal()) {
-			return u(callback);
+			return deactivate();
 		}
-		if(!Api) {
+		if (!Api) {
 			Api = require('./api');
 		}
-		Api.logout(function() {
-			u(callback);
-		});
+		await new Promise(resolve => Api.logout(resolve));
+		await deactivate();
 	},
 
+
 	// 登录
-	login: function(username, password, host, callback) {
-		var me = this;
-		// 先本地验证
-		db.users.findOne({Username: username, IsLocal: true}, function(err, user) {
-			if (!err && user && user.UserId && user.Pwd) {
-				var md5Password = Common.md5(password, user.UserId);
-				// 如果是32位的, 表示是md5
-				if (user.Pwd.length == 32) {
-					if (user.Pwd == md5Password) {
-						// 本地用户
-						me.saveCurUser(user, function() {
-							callback(true);
-						});
-					}
-					// 密码有误
-					else {
-						callback(false);
-					}
+		login: async function(username, password, host, callback) {
+		const me = this;
+		const user = await p(db.users, 'findOne', {Username: username, IsLocal: true}).catch(() => null);
+		if (user && user.UserId && user.Pwd) {
+			const md5Password = Common.md5(password, user.UserId);
+			if (user.Pwd.length == 32) {
+				if (user.Pwd != md5Password) {
+					return callback && callback(false);
 				}
-				// 如果不是32位的, 那表示保存的是之前的明文, 则将明文转成密文
-				else if (user.Pwd == password) {
-					user.Pwd = md5Password;
-					me.saveCurUser(user, function() {
-						callback(true);
-					});
+			} else {
+				if (user.Pwd != password) {
+					return callback && callback(false);
 				}
-				// 密码有误
-				else {
-					callback(false);
-				}
+				user.Pwd = md5Password;
 			}
-			// 本地用户没有, 则远程验证
-			else {
-				if(!Api) {
-					Api = require('./api');
-				}
-				// 远程验证
-				Api.auth(username, password, host, function(ret) {
-					if(ret.Ok) {
-						User.saveCurUser(ret, function () {
-							callback(true);
-						});
-					} else {
-						callback(false);
-					}
-				});
-			}
-		});
+			await new Promise(resolve => me.saveCurUser(user, resolve));
+			return callback && callback(true);
+		}
+
+		if (!Api) {
+			Api = require('./api');
+		}
+		const ret = await new Promise(resolve => Api.auth(username, password, host, resolve));
+		if (!ret || !ret.Ok) {
+			return callback && callback(false);
+		}
+		await new Promise(resolve => User.saveCurUser(ret, resolve));
+		callback && callback(true);
 	},
+
 
 	// 创建本地帐户
 	createLocalUser: function(useranme, pwd, callback) {
@@ -172,94 +152,69 @@ User = {
 	 * @param  {Function} callback [description]
 	 * @return {[type]}            [description]
 	 */
-	saveCurUser: function(user, callback) {
-		var me = this;
+		saveCurUser: async function(user, callback) {
+		const me = this;
+		me.token = user.Token;
+		me.userId = user.UserId;
+		me.email = user.Email;
+		me.username = user.Username;
+		me.host = user.Host;
+		me.local = user.IsLocal;
+		me.setUserDataPath();
+
+		await p(db.users, 'update', {_id: {$ne: user.UserId}}, {$set: {IsActive: false}}, {multi: true}).catch(() => {});
+		const count = await p(db.users, 'count', {_id: user.UserId}).catch(() => 0);
+		if (!count) {
+			user['_id'] = user.UserId;
+			user['IsActive'] = true;
+			user['LastLoginTime'] = new Date();
+			user['HasDB'] = true;
+			await p(db.users, 'insert', user).catch(() => {});
+			return callback && callback(true);
+		}
+		user.IsActive = true;
+		user.LastLoginTime = new Date();
+		delete user['Ok'];
+		try {
+			const cnt = await p(db.users, 'update', {_id: user.UserId}, {$set: user});
+			callback && callback(cnt != 0);
+		} catch (e) {
+			callback && callback(false);
+		}
+	},
+
+
+	// 打开软件时, 从db中获取当前用户
+		init: async function(callback) {
+		console.log("......user init.......");
+		const me = this;
+		me.g = await new Promise(resolve => me.getG(resolve));
+
+		const user = await p(db.users, 'findOne', {IsActive: true}).catch(() => null);
+		if (!user || !user.UserId) {
+			console.log('不存在');
+			return callback && callback(false);
+		}
 
 		me.token = user.Token;
 		me.userId = user.UserId;
 		me.email = user.Email;
 		me.username = user.Username;
-		me.host = user.Host; // http://leanote.com, http://localhost
+		me.LastSyncUsn = user.LastSyncUsn;
+		me.LastSyncTime = user.LastSyncTime;
+		me.host = user.Host;
 		me.local = user.IsLocal;
-		// 判断当前用户是否有文件夹
+		me.hasDB = user.HasDB;
+
+		db.initDBForUser(me.hasDB ? me.userId : '', user);
+		Evt.setHost(me.host);
+		for (const i in me.g) {
+			user[i] = me.g[i];
+		}
 		me.setUserDataPath();
-
-		// 1.
-		// 设置其它用户为 not active
-		db.users.update({_id: {$ne: user.UserId}}, {$set: {IsActive: false}}, {multi: true}, function(err, n) {
-
-			// 2. 当前用户是否在数据库中
-			db.users.count({_id: user.UserId}, function(err, count) {
-				if(err || count == 0) {
-					// 添加一个
-					user['_id'] = user.UserId;
-					user['IsActive'] = true;
-					user['LastLoginTime'] = new Date();
-					// 新添加的都是HasDB
-					user['HasDB'] = true;
-					db.users.insert(user, function(err, doc) {
-						callback && callback(true);
-					});
-				} else {
-					user.IsActive = true;
-					user.LastLoginTime = new Date();
-					delete user['Ok'];
-					db.users.update({_id: user.UserId}, {$set: user}, function(err, cnt) {
-						if(err || cnt == 0) {
-							callback && callback(false);
-						} else {
-							callback && callback(true);
-						}
-					});
-				}
-			});
-		});
+		callback && callback(user);
 	},
 
-	// 打开软件时, 从db中获取当前用户
-	init: function(callback) {
-		console.log("......user init.......")
-		var me = this;
-
-		me.getG(function(g) {
-			me.g = g;
-
-			db.users.findOne({IsActive: true}, function(err, user) {
-				if(err || !user || !user.UserId) {
-					console.log('不存在');
-					callback && callback(false);
-				} else {
-
-					me.token = user.Token;
-					me.userId = user.UserId;
-					me.email = user.Email;
-					me.username = user.Username;
-					me.LastSyncUsn = user.LastSyncUsn;
-					me.LastSyncTime = user.LastSyncTime;
-					me.host = user.Host;
-					me.local = user.IsLocal;
-
-					me.hasDB = user.HasDB; // 是否有自己的DB
-
-					// 为该用户初始化数据库
-					db.initDBForUser(me.hasDB ? me.userId : '', user);
-
-					Evt.setHost(me.host);
-
-					// 全局配置也在user中, 到web端
-					for(var i in me.g) {
-						user[i] = me.g[i];
-					}
-
-					// 设置当前用户数据路径
-					me.setUserDataPath();
-
-					callback && callback(user);
-				}
-			});
-
-		});
-	},
 	// 得到当前活跃用户Id
 	getCurActiveUserId: function() {
 		return this.userId || "user1";
