@@ -285,3 +285,10 @@ function stripHtml (str) {
   return str.replace(/<.*?>/g, '');
 }
 module.exports.stripHtml = stripHtml;
+
+const NOTE_UNSAFE_ATTRS = ['id', , /on\w+/i, /data-\w+/i, 'clear', 'target'];
+
+module.exports.sanitizeNoteBody = function (content) {
+  content = content.replace(/<([^ >]+?) [^>]*?>/g, module.exports.filterTag(module.exports.stripAttrs(NOTE_UNSAFE_ATTRS)));
+  return module.exports.stripUnsafeTags(content);
+};

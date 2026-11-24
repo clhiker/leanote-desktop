@@ -203,18 +203,7 @@ var Import = {
   },
 
   fixContent: function (content) {
-    // srip unsage attrs
-    var unsafeAttrs = ['id', , /on\w+/i, /data-\w+/i, 'clear', 'target'];
-      content = content.replace(/<([^ >]+?) [^>]*?>/g, Api.Resanitize.filterTag(Api.Resanitize.stripAttrs(unsafeAttrs)));
-
-      // strip unsafe tags
-      content = Api.Resanitize.stripUnsafeTags(content, 
-        ['wbr','style', 'comment', 'plaintext', 'xmp', 'listing',
-      'applet','base','basefont','bgsound','blink','body','button','dir','embed','fieldset','frameset','head',
-      'html','iframe','ilayer','input','isindex','label','layer','legend','link','marquee','menu','meta','noframes',
-      'noscript','object','optgroup','option','param','plaintext','script','select','style','textarea','xml']
-      );
-      return content;
+    return Api.Resanitize.sanitizeNoteBody(content);
   },
 
   // 解析笔记
