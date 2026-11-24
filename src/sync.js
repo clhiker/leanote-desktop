@@ -1179,7 +1179,7 @@ var Sync = {
     },
 
     // again, 再一次sync, 不要send changes
-    sendChanges: function(again) {
+    sendChanges: async function(again) {
         var me = this;
         console.log('%cstep3 send changes', 'color: #68bc7a')
         // 先处理冲突, 可以同时进行
@@ -1188,38 +1188,43 @@ var Sync = {
             me.fixConflictsForSendChanges(function() {});
             return;
         }
-        me.fixConflicts(function() {
-            // send changes
-            console.log('    send changes');
-            me._initSyncInfo(); // 重新初始化[]
-            async.series([
-                function(cb) {
-                    me.sendNotebookChanges(cb);
-                },
-                function(cb) {
-                    me.addSyncProcessStatus(10);
-                    me.sendNoteChanges(cb);
-                },
-                function(cb) {
-                    me.addSyncProcessStatus(30);
-                    me.sendTagChanges(cb);
-                }
-            ], function() {
-                me.addSyncProcessStatus(10);
+        await new Promise(resolve => me.fixConflicts(resolve));
+        // send changes
+        console.log('    send changes');
+        me._initSyncInfo(); // 重新初始化[]
 
-                // 重新再来一次增量同步
-                if (me._needIncrSyncAgain && me._reSyncAgainTimes < 5) {
-                    console.error('    needIncrSyncAgain')
-                    me._reSyncAgainTimes++
-                    me.fixConflictsForSendChanges(function() {
-                        me.incrSync(true);
-                    });
-                } else {
-                    console.log('    send changes 后解决冲突');
-                    me.fixConflictsForSendChanges(function() {});
+        const series = async (tasks) => {
+            for (const task of tasks) {
+                const err = await new Promise(resolve => task(resolve));
+                if (err) {
+                    return;
                 }
+            }
+        };
+        await series([
+            cb => me.sendNotebookChanges(cb),
+            cb => {
+                me.addSyncProcessStatus(10);
+                me.sendNoteChanges(cb);
+            },
+            cb => {
+                me.addSyncProcessStatus(30);
+                me.sendTagChanges(cb);
+            }
+        ]);
+        me.addSyncProcessStatus(10);
+
+        // 重新再来一次增量同步
+        if (me._needIncrSyncAgain && me._reSyncAgainTimes < 5) {
+            console.error('    needIncrSyncAgain')
+            me._reSyncAgainTimes++
+            me.fixConflictsForSendChanges(function() {
+                me.incrSync(true);
             });
-        });
+        } else {
+            console.log('    send changes 后解决冲突');
+            me.fixConflictsForSendChanges(function() {});
+        }
     }
 };
 
