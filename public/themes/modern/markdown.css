@@ -1,1 +1,269 @@
-/* Modern Markdown preview layer. Filled in Phase 5. */
+/* Modern Markdown preview. Scoped to html.ui-modern. */
+
+html.ui-modern #mdEditor #preview-contents {
+    padding: 24px 28px;
+}
+
+html.ui-modern #mdEditor #wmd-preview {
+    color: var(--m-text);
+    font-size: 15px;
+    line-height: 1.7;
+}
+
+html.ui-modern #mdEditor #wmd-preview h1,
+html.ui-modern #mdEditor #wmd-preview h2,
+html.ui-modern #mdEditor #wmd-preview h3,
+html.ui-modern #mdEditor #wmd-preview h4,
+html.ui-modern #mdEditor #wmd-preview h5,
+html.ui-modern #mdEditor #wmd-preview h6 {
+    color: var(--m-text);
+    font-weight: 600 !important;
+    line-height: 1.3;
+    margin: 1.2em 0 0.5em;
+}
+
+html.ui-modern #mdEditor #wmd-preview h1 {
+    font-size: 1.75em;
+    margin-top: 0;
+}
+
+html.ui-modern #mdEditor #wmd-preview h2 {
+    font-size: 1.4em;
+}
+
+html.ui-modern #mdEditor #wmd-preview h3 {
+    font-size: 1.15em;
+}
+
+html.ui-modern #mdEditor #wmd-preview h4,
+html.ui-modern #mdEditor #wmd-preview h5,
+html.ui-modern #mdEditor #wmd-preview h6 {
+    font-size: 1em;
+}
+
+html.ui-modern #mdEditor #wmd-preview p {
+    margin: 0 0 0.8em;
+}
+
+html.ui-modern #mdEditor #wmd-preview ul,
+html.ui-modern #mdEditor #wmd-preview ol {
+    margin: 0 0 0.8em;
+    padding-left: 1.6em;
+}
+
+html.ui-modern #mdEditor #wmd-preview li {
+    margin: 0.2em 0;
+}
+
+html.ui-modern #mdEditor #wmd-preview a {
+    color: var(--m-accent);
+    text-decoration: none;
+}
+
+html.ui-modern #mdEditor #wmd-preview a:hover {
+    color: var(--m-accent-hover);
+    text-decoration: underline;
+}
+
+html.ui-modern #mdEditor #wmd-preview img {
+    max-width: 100%;
+    border-radius: var(--m-radius-lg);
+}
+
+html.ui-modern #mdEditor #wmd-preview code,
+html.ui-modern #mdEditor #wmd-preview pre {
+    font-family: var(--m-font-mono);
+}
+
+html.ui-modern #mdEditor #wmd-preview pre.hljs {
+    padding: 14px 18px;
+    overflow: auto;
+    background: var(--m-code-bg);
+    border: 1px solid var(--m-code-border);
+    border-radius: var(--m-radius-lg);
+    color: var(--m-text);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+html.ui-modern #mdEditor #wmd-preview pre.hljs code {
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-size: inherit;
+}
+
+html.ui-modern #mdEditor #wmd-preview code:not(pre code) {
+    padding: 2px 6px;
+    background: var(--m-code-inline-bg);
+    border-radius: var(--m-radius-sm);
+    color: var(--m-text);
+    font-size: 0.9em;
+}
+
+html.ui-modern #mdEditor #wmd-preview blockquote {
+    margin: 1em 0;
+    padding: 4px 0 4px 16px;
+    border-left: 3px solid var(--m-border-strong);
+    border-radius: 0;
+    background: transparent;
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #mdEditor #wmd-preview blockquote p:last-child {
+    margin-bottom: 0;
+}
+
+html.ui-modern #mdEditor #wmd-preview table {
+    width: 100%;
+    margin: 1em 0;
+    border-collapse: collapse;
+    font-size: 0.95em;
+}
+
+html.ui-modern #mdEditor #wmd-preview table th,
+html.ui-modern #mdEditor #wmd-preview table td {
+    padding: 8px 12px;
+    border: 1px solid var(--m-border);
+    background: transparent;
+    color: var(--m-text);
+    text-align: left;
+    vertical-align: top;
+}
+
+html.ui-modern #mdEditor #wmd-preview table th {
+    background: var(--m-surface-muted);
+    font-weight: 600;
+}
+
+html.ui-modern #mdEditor #wmd-preview table tr,
+html.ui-modern #mdEditor #wmd-preview table tr:nth-child(even),
+html.ui-modern #mdEditor #wmd-preview table tr:nth-child(odd) {
+    background: transparent;
+}
+
+html.ui-modern #mdEditor #wmd-preview table tbody > tr:nth-child(2n + 1) > td,
+html.ui-modern #mdEditor #wmd-preview table tbody > tr:nth-child(2n + 1) > th {
+    background: transparent;
+}
+
+html.ui-modern #mdEditor #wmd-preview hr {
+    margin: 20px 0;
+    border: 0;
+    border-top: 1px solid var(--m-border);
+}
+
+html.ui-modern #mdEditor #wmd-preview mark {
+    padding: 1px 2px;
+    background: var(--m-mark-bg);
+    color: inherit;
+}
+
+html.ui-modern #mdEditor #wmd-preview ul.task-list {
+    list-style: none;
+    padding-left: 6px;
+}
+
+html.ui-modern #mdEditor #wmd-preview .task-list-item-checkbox {
+    margin-right: 6px;
+    vertical-align: middle;
+    accent-color: var(--m-accent);
+}
+
+html.ui-modern #mdEditor #wmd-preview .footnote-ref {
+    color: var(--m-accent);
+    font-size: 0.85em;
+    text-decoration: none;
+    vertical-align: super;
+}
+
+html.ui-modern #mdEditor #wmd-preview .footnote-item p {
+    display: inline;
+}
+
+html.ui-modern #mdEditor #wmd-preview hr.footnotes-sep {
+    margin-top: 24px;
+    border-top: 1px solid var(--m-border);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-keyword,
+html.ui-modern #mdEditor #wmd-preview .hljs-selector-tag,
+html.ui-modern #mdEditor #wmd-preview .hljs-type,
+html.ui-modern #mdEditor #wmd-preview .hljs-doctag {
+    color: var(--m-hl-keyword);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-string,
+html.ui-modern #mdEditor #wmd-preview .hljs-attr,
+html.ui-modern #mdEditor #wmd-preview .hljs-template-tag,
+html.ui-modern #mdEditor #wmd-preview .hljs-template-variable,
+html.ui-modern #mdEditor #wmd-preview .hljs-regexp {
+    color: var(--m-hl-string);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-comment,
+html.ui-modern #mdEditor #wmd-preview .hljs-quote {
+    color: var(--m-hl-comment);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-number,
+html.ui-modern #mdEditor #wmd-preview .hljs-literal,
+html.ui-modern #mdEditor #wmd-preview .hljs-symbol,
+html.ui-modern #mdEditor #wmd-preview .hljs-bullet {
+    color: var(--m-hl-number);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-title,
+html.ui-modern #mdEditor #wmd-preview .hljs-function,
+html.ui-modern #mdEditor #wmd-preview .hljs-section,
+html.ui-modern #mdEditor #wmd-preview .hljs-selector-id,
+html.ui-modern #mdEditor #wmd-preview .hljs-selector-class {
+    color: var(--m-hl-title);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-built_in {
+    color: var(--m-hl-builtin);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-variable,
+html.ui-modern #mdEditor #wmd-preview .hljs-name,
+html.ui-modern #mdEditor #wmd-preview .hljs-selector-attr,
+html.ui-modern #mdEditor #wmd-preview .hljs-selector-pseudo {
+    color: var(--m-hl-variable);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-meta {
+    color: var(--m-hl-meta);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-tag {
+    color: var(--m-hl-tag);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-addition {
+    color: var(--m-hl-addition);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-deletion {
+    color: var(--m-hl-deletion);
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-emphasis {
+    font-style: italic;
+}
+
+html.ui-modern #mdEditor #wmd-preview .hljs-strong {
+    font-weight: 700;
+}
+
+html.ui-modern #mdEditor #leanoteNavContentMd {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #mdEditor #leanoteNavContentMd a {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #mdEditor #leanoteNavContentMd a:hover {
+    color: var(--m-accent);
+}

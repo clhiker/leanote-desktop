@@ -27,4 +27,19 @@ html.ui-modern.ui-dark {
     --m-code-bg: #171717;
     --m-code-inline-bg: rgba(255, 255, 255, 0.08);
     --m-code-border: #303030;
+    --m-mark-bg: rgba(210, 153, 34, 0.35);
+    --m-hl-keyword: #ff7b72;
+    --m-hl-string: #a5d6ff;
+    --m-hl-comment: #8b949e;
+    --m-hl-number: #79c0ff;
+    --m-hl-title: #d2a8ff;
+    --m-hl-builtin: #ffa657;
+    --m-hl-variable: #ffa657;
+    --m-hl-meta: #79c0ff;
+    --m-hl-tag: #7ee787;
+    --m-hl-attr: #79c0ff;
+    --m-hl-regexp: #a5d6ff;
+    --m-hl-section: #79c0ff;
+    --m-hl-addition: #7ee787;
+    --m-hl-deletion: #ffa198;
 }
