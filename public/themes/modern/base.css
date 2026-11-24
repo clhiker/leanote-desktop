@@ -87,3 +87,281 @@ html.ui-modern #noteItemListWrap {
 html.ui-modern #noteAndEditorMask {
     background: var(--m-surface);
 }
+
+/* ---------- sidebar ---------- */
+
+html.ui-modern .folderHeader {
+    border-bottom-color: transparent;
+}
+
+html.ui-modern .folderHeader span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern .folderHeader .fa-left,
+html.ui-modern .friend-header i.fa {
+    color: var(--m-text-tertiary);
+    border-right-color: transparent;
+    font-size: 12px;
+}
+
+html.ui-modern #addNotebookPlus {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #addNotebookPlus:hover {
+    color: var(--m-accent);
+}
+
+html.ui-modern .ztree > li {
+    border-bottom: 0;
+}
+
+html.ui-modern .ztree li a {
+    border-radius: var(--m-radius-sm);
+    color: var(--m-text-secondary);
+    height: 30px;
+    line-height: 30px;
+}
+
+html.ui-modern .ztree li a:hover {
+    background-color: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+html.ui-modern .ztree li a.curSelectedNode {
+    background-color: var(--m-surface-active);
+    color: var(--m-text);
+    border: 0;
+}
+
+html.ui-modern .ztree li span {
+    line-height: 30px;
+}
+
+html.ui-modern #searchNotebookForList {
+    height: 30px;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-md);
+    background: var(--m-surface);
+    color: var(--m-text);
+    padding: 0 8px;
+    box-shadow: none;
+}
+
+html.ui-modern #searchNotebookForList:focus {
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 2px var(--m-accent-soft);
+    outline: none;
+}
+
+html.ui-modern #starNotes li {
+    border-bottom-color: transparent;
+    border-radius: var(--m-radius-sm);
+}
+
+html.ui-modern #starNotes li.selected {
+    background: var(--m-surface-active);
+}
+
+html.ui-modern #starNotes li:hover {
+    background: var(--m-surface-hover);
+}
+
+html.ui-modern #starNotes li a,
+html.ui-modern #tagNav li a {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #tagNav .label {
+    background: var(--m-surface-muted);
+    color: var(--m-text-secondary);
+    border-radius: var(--m-radius-pill);
+    font-weight: 500;
+}
+
+html.ui-modern #tagNav .tag-delete {
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #notebookBottom {
+    border-top-color: var(--m-border);
+    color: var(--m-text-tertiary);
+}
+
+html.ui-modern #myProfile .dropdown-toggle {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #syncRefresh {
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #syncWarning {
+    color: var(--m-warning);
+}
+
+html.ui-modern #syncProgressBar {
+    background-color: var(--m-accent);
+}
+
+html.ui-modern .no-info {
+    color: var(--m-text-tertiary);
+}
+
+/* ---------- note list ---------- */
+
+html.ui-modern #notesAndSort {
+    background: transparent;
+    border-bottom-color: var(--m-border);
+}
+
+html.ui-modern #myNotebookNavForListNav {
+    color: var(--m-text);
+}
+
+html.ui-modern #curNotebookForListNote,
+html.ui-modern #myNotebookNavForListNav span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--m-text);
+}
+
+html.ui-modern #viewModeDropdown {
+    color: var(--m-text-secondary);
+    border-radius: var(--m-radius-md);
+}
+
+html.ui-modern #viewModeDropdown:hover {
+    background: var(--m-surface-hover);
+    color: var(--m-text);
+}
+
+html.ui-modern #newMyNote #newNoteBtn,
+html.ui-modern #newMyNote #newNoteMarkdownBtn {
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-md);
+    background: var(--m-surface);
+    color: var(--m-text-secondary);
+}
+
+html.ui-modern #newMyNote #newNoteBtn:hover,
+html.ui-modern #newMyNote #newNoteMarkdownBtn:hover {
+    background: var(--m-accent-soft);
+    border-color: var(--m-accent);
+    color: var(--m-accent);
+}
+
+html.ui-modern #searchNote {
+    background: transparent;
+}
+
+html.ui-modern #searchNote input {
+    height: 30px;
+    border: 1px solid var(--m-border);
+    border-radius: var(--m-radius-md);
+    background: var(--m-surface);
+    color: var(--m-text);
+    padding-left: 10px;
+    box-shadow: none;
+}
+
+html.ui-modern #searchNote input:focus {
+    border-color: var(--m-accent);
+    box-shadow: 0 0 0 2px var(--m-accent-soft);
+}
+
+html.ui-modern #noteItemList .item {
+    border-color: transparent;
+    border-radius: var(--m-radius-md);
+    background: transparent;
+    box-shadow: none;
+    margin-top: 2px;
+}
+
+html.ui-modern #noteItemList .item:hover {
+    background: var(--m-surface-hover);
+}
+
+html.ui-modern #noteItemList .item-active,
+html.ui-modern #noteItemList .item-active:hover {
+    background: var(--m-accent-soft);
+    color: var(--m-text);
+}
+
+html.ui-modern #noteItemList .item-active .fa,
+html.ui-modern #noteItemList .item-active .item-info .fa {
+    color: inherit;
+}
+
+html.ui-modern #noteItemList .item-active .item-title {
+    color: var(--m-text);
+}
+
+html.ui-modern #noteItemList .item-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--m-text);
+    border-bottom: 0;
+}
+
+html.ui-modern #noteItemList .item-desc .fa,
+html.ui-modern #noteItemList .item-info,
+html.ui-modern #noteItemList .desc {
+    color: var(--m-text-tertiary);
+    font-size: 12px;
+}
+
+html.ui-modern #noteItemList .item-thumb {
+    background: var(--m-surface-muted);
+    border-radius: var(--m-radius-sm);
+}
+
+html.ui-modern #noteItemList .item-thumb img {
+    border-radius: var(--m-radius-sm);
+}
+
+html.ui-modern #noteItemList .item-setting,
+html.ui-modern #noteItemList .item-star,
+html.ui-modern #noteItemList .item-blog,
+html.ui-modern #noteItemList .item-conflict-info,
+html.ui-modern #noteItemList .item-warning {
+    background: var(--m-surface-muted);
+    border-radius: var(--m-radius-sm);
+}
+
+html.ui-modern #noteItemList .item-conflict {
+    border-color: var(--m-warning) !important;
+}
+
+html.ui-modern #noteItemList .item-err {
+    border-color: var(--m-danger) !important;
+}
+
+html.ui-modern #noteItemList.list-view .item {
+    border-radius: 0;
+    border-bottom: 1px solid var(--m-border);
+    background: transparent;
+}
+
+html.ui-modern #noteItemList.list-view .item:hover {
+    background: var(--m-surface-hover);
+}
+
+html.ui-modern #noteItemList.list-view .item-active,
+html.ui-modern #noteItemList.list-view .item-active:hover {
+    background: var(--m-accent-soft);
+}
+
+/* ---------- splitters ---------- */
+
+html.ui-modern .noteSplit {
+    background-color: transparent;
+}
+
+html.ui-modern .noteSplit:hover {
+    background-color: var(--m-accent-soft);
+}
+
