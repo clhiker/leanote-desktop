@@ -90,10 +90,8 @@ function isEmpty(obj) {
 		return true;
 	}
 	
-	if(isArray(obj)) {
-		if(obj.length == 0) {
-			return true;
-		}
+	if(Array.isArray(obj) && obj.length === 0) {
+		return true;
 	}
 	
 	return false;
@@ -108,21 +106,14 @@ function isEmpty(obj) {
 function formArrDataToJson(arrData) {
 	var datas = {};
 	var arrObj= {}; // {a:[1, 2], b:[2, 3]};
-	for(var i in arrData) {
-		var attr = arrData[i].name;
-		var value = arrData[i].value;
+	for(const {name, value} of arrData) {
 		// 判断是否是a[]形式
-		if(attr.substring(attr.length-2, attr.length) == '[]') {
-			attr = attr.substring(0, attr.length-2);
-			if(arrObj[attr] == undefined) {
-				arrObj[attr] = [value];
-			} else {
-				arrObj[attr].push(value);
-			}
+		if(name.endsWith('[]')) {
+			const key = name.slice(0, -2);
+			(arrObj[key] = arrObj[key] || []).push(value);
 			continue;
 		}
-		
-		datas[attr] = value;
+		datas[name] = value;
 	}
 	
 	return $.extend(datas, arrObj);
@@ -586,12 +577,8 @@ function closeDialog() {
 
 // 远程
 function showDialogRemote(url, data) {
-	data = data || {};
-	url += "?";
-	for(var i in data) {
-		url += i + "=" + data[i] + "&";
-	}
-	$("#leanoteDialogRemote").modal({remote: url});
+	const param = new URLSearchParams(data || {}).toString();
+	$("#leanoteDialogRemote").modal({remote: url + (url.includes('?') ? '&' : '?') + param});
 }
 
 //---------------
@@ -854,15 +841,7 @@ function setHash(key, value) {
 	}
 	var kvs = getHashObject();
 	kvs[key] = value;
-	var str = "";
-	for(var i in kvs) {
-		if(kvs[i]) {
-			if(str) {
-				str += "&";
-			}
-			str += i + '=' + kvs[i];
-		}
-	}
+	const str = Object.entries(kvs).filter(([, v]) => v).map(([k, v]) => `${k}=${v}`).join('&');
 	location.href = "#" + str;
 }
 
@@ -985,10 +964,9 @@ function commonCmd(e) {
 // });
 
 function loadToolIcons() {
-	var imgs = ['traffic-close-hover@2x.png', 'traffic-minimise-hover@2x.png', 'traffic-zoom-hover@2x.png'];
-	for(var i in imgs) {
-		var imageObj = new Image(); 
-		imageObj.src = 'public/css/icon/' + imgs[i];
+	const imgs = ['traffic-close-hover@2x.png', 'traffic-minimise-hover@2x.png', 'traffic-zoom-hover@2x.png'];
+	for(const img of imgs) {
+		new Image().src = 'public/css/icon/' + img;
 	}
 }
 
@@ -997,19 +975,7 @@ function isMac() {
 }
 
 function getMainWinParams() {
-	if(isMac()) {
-		return {
-			// "icon": "/public/images/logo/leanote.png",
-			frame: false,
-			transparent: false,
-			width: 258,
-			height: 326,
-			toolbar: false,
-			"chromium-args": "--enable-smooth-scrolling"
-		};
-	}
-	return {
-		// "icon": "/public/images/logo/leanote.png",
+	const params = {
 		frame: true,
 		transparent: false,
 		width: 1100,
@@ -1017,6 +983,10 @@ function getMainWinParams() {
 		toolbar: false,
 		"chromium-args": "--enable-smooth-scrolling"
 	};
+	if(isMac()) {
+		Object.assign(params, {frame: false, width: 258, height: 326});
+	}
+	return params;
 }
 
 // 浏览器打开
@@ -1075,28 +1045,10 @@ var Loading = {
 		msg || (msg = getMsg("loading..."));
 		this.$msg.html(msg);
 
-		if (option.isLarge) {
-			this.$loadingDialog.find('.modal-dialog').addClass('modal-large');
-		}
-		else {
-			this.$loadingDialog.find('.modal-dialog').addClass('modal-large');
-		}
-
+		this.$loadingDialog.find('.modal-dialog').addClass('modal-large');
 		this.$loadingDialog.modal({backdrop: 'static', keyboard: true});
-
-		if (option.hasProgress) {
-			this.$loadingDialog.addClass('has-progress');
-		}
-		else {
-			this.$loadingDialog.removeClass('has-progress');
-		}
-
-		if (option.hideClose) {
-			this.$loadingDialog.addClass('hide-close');
-		}
-		else {
-			this.$loadingDialog.removeClass('hide-close');
-		}
+		this.$loadingDialog.toggleClass('has-progress', !!option.hasProgress);
+		this.$loadingDialog.toggleClass('hide-close', !!option.hideClose);
 
 		this.onClose = option.onClose;
 		if (!this.inited) {
