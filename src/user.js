@@ -4,6 +4,7 @@ var Evt = require('./evt');
 var db = require('./db');
 var dbClient = require('./db_client');
 var Common = require('./common');
+const p = require('./promise_util');
 var async;
 
 function log(o) {
@@ -639,74 +640,44 @@ User = {
 	},
 
 	// 从全局数据库中删除数据
-	_deleteDB: function (userId, callback) {
-		var me = this;
-
+	_deleteDB: async function (userId, callback) {
+		const me = this;
 		// 判断当前db是否是全局的, 如果不是, 则初始化全局的
-		var names = ['notebooks', 'notes', 'tags',/* 'images',*/ 'attachs', 'noteHistories'];
-		var sourceDb = {};
+		const initNames = ['notebooks', 'notes', 'tags', 'attachs', 'noteHistories'];
+		const names = ['notebooks', 'notes', 'tags', 'attachs'];
+		let sourceDb = db;
 		if (me.hasDB) {
-			db.initIt(sourceDb, names, '', false);
-		}
-		else {
-			sourceDb = db;
+			sourceDb = {};
+			db.initIt(sourceDb, initNames, '', false);
 		}
 
-		var names = ['notebooks', 'notes', 'tags', /*'images', */'attachs'];
-		var query = {UserId: userId};
-
-		if (!async) {
-			async = require('async');
-		}
-
-		async.eachSeries(names, function (name, cb) {
-			var dbIt = sourceDb[name];
+		const query = {UserId: userId};
+		for (const name of names) {
+			const dbIt = sourceDb[name];
 			if (!dbIt) {
-				cb();
-				return;
+				continue;
 			}
-			// 如果是笔记, 则要删除note histories
-			if (name == 'notes') {
-				dbIt.find(query, function(err, docs) {
-					if (err || !docs) {
-						cb();
-						return;
-					}
-
-					// 删除历史记录
-					// me._deleteNoteHistories(sourceDb, docs, function () {
-						// 删除自己
-						dbIt.remove(query, { multi: true },function () {
-							cb();
-						});
-					// });
-				});
+			if (name === 'notes') {
+				const docs = await p(dbIt, 'find', query).catch(() => null);
+				if (!docs) {
+					continue;
+				}
 			}
-			else {
-				dbIt.remove(query, { multi: true }, function () {
-					cb();
-				});
-			}
-		}, function () {
-			callback();
-		});
+			await p(dbIt, 'remove', query, {multi: true}).catch(() => {});
+		}
+		callback();
 	},
 
 	// 删除笔记历史记录
-	_deleteNoteHistories: function (sourceDb, notes, callback) {
-		var me = this;
-		sourceDb.noteHistories.loadDB(function (ok) {
-			if (!ok) {
-				return callback();
-			}
-			async.eachSeries(notes, function (note, cb) {
-				sourceDb.noteHistories.remove( {_id: note.NoteId}, { multi: true }, function () {
-					cb();
-				});
-			}, function () {
-				callback();
-			});
-		});
+	_deleteNoteHistories: async function (sourceDb, notes, callback) {
+		const ok = await new Promise(resolve => sourceDb.noteHistories.loadDB(resolve));
+		if (!ok) {
+			return callback();
+		}
+		for (const note of notes) {
+			await p(sourceDb.noteHistories, 'remove', {_id: note.NoteId}, {multi: true}).catch(() => {});
+		}
+		callback();
 	},
 
 	// 1. User.updateAllBeLocal('tests3@a.com', 'abc123', 'http://localhost:9000');
