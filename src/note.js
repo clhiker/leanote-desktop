@@ -128,41 +128,28 @@ const Note = {
 	},
 
 	// 公开/取消为博客
-	setNote2Blog: function (noteIds, isBlog, callback) {
+	setNote2Blog: async function (noteIds, isBlog, callback) {
 		const me = this;
 		let ok = false;
-		async.eachSeries(noteIds, function (noteId, cb) {
-			me._setNote2Blog(noteId, isBlog, function (ret) {
-				if (ret) {
-					ok = true;
-				}
-				cb();
-			});
-		}, function () {
-			callback(ok);
-		});
+		for (const noteId of noteIds) {
+			if (await new Promise(resolve => me._setNote2Blog(noteId, isBlog, resolve))) {
+				ok = true;
+			}
+		}
+		callback(ok);
 	},
 
-	_setNote2Blog: function (noteId, isBlog, callback) {
+	_setNote2Blog: async function (noteId, isBlog, callback) {
 		const me = this;
-		me.getNote(noteId, function (note) {
-			if (note) {
-				if (note.IsBlog === isBlog) {
-					return callback && callback(true);
-				}
-				// 更新, 设置isDirty
-				db.notes.update({_id: note._id}, {
-					$set: {
-						IsBlog: isBlog,
-						IsDirty: true
-					}
-				}, {}, function (err, numReplaced) {
-					return callback && callback(true);
-				});
-			} else {
-				return callback && callback(false);
-			}
-		});
+		const note = await new Promise(resolve => me.getNote(noteId, resolve));
+		if (!note) {
+			return callback && callback(false);
+		}
+		if (note.IsBlog === isBlog) {
+			return callback && callback(true);
+		}
+		await p(db.notes, 'update', {_id: note._id}, {$set: {IsBlog: isBlog, IsDirty: true}}, {}).catch(() => {});
+		return callback && callback(true);
 	},
 
 	// 添加笔记历史
@@ -173,53 +160,36 @@ const Note = {
 		Histories []EachHistory `Histories`
 	}
 	 */
-	addNoteHistory: function (noteId, content, callback) {
-		const me = this;
-		db.noteHistories.loadDB(function (ok) {
-			if (!ok) {
-				callback && callback(false);
-				return;
-			}
-			// 先判断是否存在, 不存在则新建之
-			db.noteHistories.findOne({_id: noteId}, function (err, history) {
-				const now = new Date();
-				// 新建之
-				if (!history) {
-					db.noteHistories.insert({
-						_id: noteId,
-						Histories: [{Content: content, "UpdatedTime": now}],
-						"UpdatedTime": now
-					}, function () {
-						callback && callback(true);
-					});
-				}
-				// 更新之
-				else {
-					const histories = history.Histories;
-					// 如果与前一个内容一样, 则不加入历史中
-					if (histories
-						&& histories[histories.length - 1].Content
-						&& histories[histories.length - 1].Content === content) {
-						return (callback && callback(true));
-					}
-
-					histories.push({Content: content, UpdatedTime: now});
-
-					// 不能多了, 多了有麻烦, 20个最多
-					const max = 20;
-					const len = histories.length;
-					if (len > max) {
-						for (let i = 0; i < len - max; ++i) {
-							histories.shift();
-						}
-					}
-
-					db.noteHistories.update({_id: noteId}, {$set: {Histories: histories}}, function () {
-						callback && callback(true);
-					});
-				}
-			});
-		});
+	addNoteHistory: async function (noteId, content, callback) {
+		const ok = await new Promise(resolve => db.noteHistories.loadDB(resolve));
+		if (!ok) {
+			return callback && callback(false);
+		}
+		const history = await p(db.noteHistories, 'findOne', {_id: noteId}).catch(() => null);
+		const now = new Date();
+		if (!history) {
+			await p(db.noteHistories, 'insert', {
+				_id: noteId,
+				Histories: [{Content: content, "UpdatedTime": now}],
+				"UpdatedTime": now
+			}).catch(() => {});
+			return callback && callback(true);
+		}
+		const histories = history.Histories;
+		// 如果与前一个内容一样, 则不加入历史中
+		if (histories
+			&& histories[histories.length - 1].Content
+			&& histories[histories.length - 1].Content === content) {
+			return callback && callback(true);
+		}
+		histories.push({Content: content, UpdatedTime: now});
+		// 不能多了, 多了有麻烦, 20个最多
+		const max = 20;
+		while (histories.length > max) {
+			histories.shift();
+		}
+		await p(db.noteHistories, 'update', {_id: noteId}, {$set: {Histories: histories}}).catch(() => {});
+		callback && callback(true);
 	},
 
 	// 删除笔记时, 删除历史记录
@@ -456,53 +426,40 @@ const Note = {
 
 	// 移动note
 	// 重新统计另一个notebookId的笔记数
-	moveNote: function (noteIds, notebookId, callback) {
+	moveNote: async function (noteIds, notebookId, callback) {
 		const me = this;
 		if (Common.isEmpty(noteIds)) {
-			callback(false);
-			return;
+			return callback(false);
 		}
-
 		const preNotebookIds = {};
-		async.eachSeries(noteIds, function (noteId, cb) {
-			me.getNote(noteId, function (note) {
-				if (note) {
-					// var to = !note.Star;
-					// 是原笔记本
-					const preNotebookId = note.NotebookId;
-					if (preNotebookId === notebookId && !note.IsTrash) {
-						cb();
-						return;
-					}
-					preNotebookIds[preNotebookId] = true;
-					note.NotebookId = notebookId;
-					db.notes.update({_id: note._id}, {
-						$set: {
-							IsDirty: true,
-							NotebookId: notebookId,
-							IsTrash: false,
-							LocalIsDelete: false,
-							UpdatedTime: new Date()
-						}
-					}, function (err, n) {
-						cb();
-					});
-				} else {
-					cb();
+		for (const noteId of noteIds) {
+			const note = await new Promise(resolve => me.getNote(noteId, resolve));
+			if (!note) {
+				continue;
+			}
+			const preNotebookId = note.NotebookId;
+			if (preNotebookId === notebookId && !note.IsTrash) {
+				continue;
+			}
+			preNotebookIds[preNotebookId] = true;
+			note.NotebookId = notebookId;
+			await p(db.notes, 'update', {_id: note._id}, {
+				$set: {
+					IsDirty: true,
+					NotebookId: notebookId,
+					IsTrash: false,
+					LocalIsDelete: false,
+					UpdatedTime: new Date()
 				}
-			});
-
-		}, function () {
-			// 重新统计
-			for (let i in preNotebookIds) {
-				Notebook.reCountNotebookNumberNotes(i);
-			}
-			if (!preNotebookIds[notebookId]) {
-				Notebook.reCountNotebookNumberNotes(notebookId);
-			}
-
-			callback(true);
-		});
+			}).catch(() => {});
+		}
+		for (const id of Object.keys(preNotebookIds)) {
+			Notebook.reCountNotebookNumberNotes(id);
+		}
+		if (!preNotebookIds[notebookId]) {
+			Notebook.reCountNotebookNumberNotes(notebookId);
+		}
+		callback(true);
 	},
 
 	// 加星或取消
@@ -1099,71 +1056,54 @@ const Note = {
 	// 将本地冲突的笔记复制一份
 	// serverNoteId
 	// 附件也要复制一份
-	copyNoteForConfict: function (noteId, callback) {
+	copyNoteForConfict: async function (noteId, callback) {
 		const me = this;
-		me.getNote(noteId, function (note) {
-			if (!note) {
-				callback(false);
-				return;
+		const note = await new Promise(resolve => me.getNote(noteId, resolve));
+		if (!note) {
+			return callback(false);
+		}
+		// 新Id
+		delete note['_id'];
+		delete note['ServerNoteId'];
+		note.NoteId = Common.objectId();
+		note.ConflictNoteId = noteId;
+		note.ConflictTime = new Date();
+		note.ConflictFixed = false;
+		note.IsDirty = true;
+		note.LocalIsNew = true;
+		note.InitSync = false;
+		note.LocalIsDelete = false;
+
+		// 只复制有path的
+		const attachs = note.Attachs || [];
+		const newAttachs = [];
+		for (const attach of attachs) {
+			if (!attach.Path) {
+				continue;
 			}
-			// 新Id
-			delete note['_id'];
-			delete note['ServerNoteId'];
-			note.NoteId = Common.objectId(); // 新生成一个NoteId
-			note.ConflictNoteId = noteId; // 与noteId有冲突
-			note.ConflictTime = new Date(); // 发生冲突时间
-			note.ConflictFixed = false; // 冲突未解决
-			note.IsDirty = true;
-			note.LocalIsNew = true; // 新增加的
-			note.InitSync = false; // 都是本地的, 相当于新建的笔记
-			note.LocalIsDelete = false;
-
-			// 只复制有path的
-			const attachs = note.Attachs || [];
-			const newAttachs = [];
-			// console.log('不会吧.............')
-			// console.log(attachs);
-			async.eachSeries(attachs, function (attach, cb) {
-				if (!attach.Path) {
-					return cb();
-				}
-				// 新路径
-				const filePathAttr = Common.splitFile(attach.Path);
-				filePathAttr.nameNotExt += '_cp_' + attach.FileId; // 另一个
-				const newPath = filePathAttr.getFullPath();
-				console.log('	复制文件', attach);
-				// 复制之
-				// try {
-				Common.copyFile(attach.Path, newPath, function (ret) {
-					if (ret) {
-						attach.FileId = Common.objectId();
-						attach.IsDirty = true;
-						attach.Path = newPath;
-						delete attach['ServerFileId'];
-						newAttachs.push(attach);
-					}
-					cb();
-				});
-				/*
-            } catch(e) {
-                cb();
-            }
-            */
-			}, function () {
-				note.Attachs = newAttachs;
-				console.log('	conflict 复制后的', note);
-				db.notes.insert(note, function (err, newNote) {
-					if (err) {
-						callback(false);
-
-					} else {
-						callback(newNote);
-						// 重新统计笔记本的笔记数量
-						Notebook.reCountNotebookNumberNotes(newNote.NotebookId);
-					}
-				});
-			});
-		});
+			// 新路径
+			const filePathAttr = Common.splitFile(attach.Path);
+			filePathAttr.nameNotExt += '_cp_' + attach.FileId;
+			const newPath = filePathAttr.getFullPath();
+			console.log('	复制文件', attach);
+			const copied = await new Promise(resolve => Common.copyFile(attach.Path, newPath, resolve));
+			if (copied) {
+				attach.FileId = Common.objectId();
+				attach.IsDirty = true;
+				attach.Path = newPath;
+				delete attach['ServerFileId'];
+				newAttachs.push(attach);
+			}
+		}
+		note.Attachs = newAttachs;
+		console.log('	conflict 复制后的', note);
+		try {
+			const newNote = await p(db.notes, 'insert', note);
+			callback(newNote);
+			Notebook.reCountNotebookNumberNotes(newNote.NotebookId);
+		} catch (e) {
+			callback(false);
+		}
 	},
 
 	// 复制笔记到某笔记本下, 本地使用
