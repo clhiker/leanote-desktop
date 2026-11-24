@@ -16,6 +16,7 @@
   "dependencies": {
     "@electron/remote": "^2.1.4",
     "async": "0.9.0",
+    "dompurify": "^3.5.0",
     "highlight.js": "^11.12.0",
     "iconv-lite": "0.4.24",
     "markdown-it": "^14.1.1",

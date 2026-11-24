@@ -7,7 +7,17 @@
   var markdownItMark = nodeRequire("markdown-it-mark");
   var markdownItAnchor = nodeRequire("markdown-it-anchor");
   var twemoji = nodeRequire("twemoji");
-  var hljs = nodeRequire("highlight.js");
+  var hljs = nodeRequire("highlight.js/lib/common");
+  var DOMPurify = nodeRequire("dompurify");
+  if (typeof DOMPurify === "function") {
+    DOMPurify = DOMPurify(window);
+  }
+
+  var PURIFY_CONFIG = {
+    ADD_ATTR: ["target"],
+    ADD_DATA_URI_TAGS: ["img"],
+    ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|callto|sms|cid|xmpp|leanote|file):|[^a-z]|[a-z+.\-]+(?:[^a-z+.\-:]|$))/i
+  };
 
   function escapeHtml(str) {
     return (str || "")
@@ -155,7 +165,7 @@
     if (!input || !preview) return;
 
     var doRender = function() {
-      preview.innerHTML = renderMarkdown(input.value);
+      preview.innerHTML = DOMPurify.sanitize(renderMarkdown(input.value), PURIFY_CONFIG);
       buildToc();
     };
 
