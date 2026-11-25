@@ -160,8 +160,8 @@ function targetPlan(target) {
   if (target === 'win') {
     if (HOST === 'win32') return { ok: true };
     if (hasCommand('wine') || hasCommand('wine64')) return { ok: true };
-    if (process.env.ALLOW_NO_WINE === '1') return { ok: true, degraded: true };
-    return { ok: false, reason: 'wine not found (or ALLOW_NO_WINE=1 for degraded)' };
+    if (process.env.ALLOW_NO_WINE === '1') return { ok: true, degraded: true, portable: true };
+    return { ok: false, reason: 'wine not found (or ALLOW_NO_WINE=1 for portable zip without installer)' };
   }
   if (target === 'mac') {
     return HOST === 'darwin' ? { ok: true } : { ok: false, reason: 'requires macOS' };
@@ -217,11 +217,28 @@ function buildWin() {
   if (!p.ok) return mark('win', 'skipped', p.reason);
   const out = outDir('win');
   ensureOut(out);
-  const args = ['electron-builder', '--win', 'nsis', '--x64', '--publish', 'never',
+  const portable = process.env.WIN_PORTABLE === '1' || p.degraded;
+  const args = ['electron-builder', '--win', portable ? 'dir' : 'nsis', '--x64', '--publish', 'never',
     `--config.directories.output=${out}`, ...builderEnvArgs()];
   if (p.degraded) args.push('--config.win.signAndEditExecutable=false');
   run(NPX, args);
-  mark('win', 'built', '', out, !!p.degraded);
+  if (portable) {
+    packageWindowsPortable(out);
+  }
+  mark('win', 'built', portable ? 'portable-zip' : '', out, !!p.degraded);
+}
+function packageWindowsPortable(out) {
+  const unpacked = path.join(out, 'win-unpacked');
+  if (!isDir(unpacked)) throw new Error('win-unpacked not found');
+  const zip = path.join(out, `Leanote-${VERSION}-win-x64-portable.zip`);
+  if (opts.dryRun) { log(`DRY  zip ${rel(zip)}`); return; }
+  if (hasCommand('zip')) {
+    run('zip', ['-qr', zip, 'win-unpacked'], { cwd: out });
+  } else if (hasCommand('7z')) {
+    run('7z', ['a', '-tzip', zip, 'win-unpacked'], { cwd: out });
+  } else {
+    throw new Error('zip/7z not found for portable package');
+  }
 }
 function buildMac() {
   const p = targetPlan('mac');
