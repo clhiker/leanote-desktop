@@ -23,6 +23,14 @@ app.on('browser-window-created', (_, win) => {
 // be closed automatically when the javascript object is GCed.
 let mainWindow = null;
 
+const APP_USER_MODEL_ID = 'com.leanote.desktop';
+const WINDOW_ICON = process.platform === 'darwin' ? undefined : __dirname + '/public/images/ico/app.ico';
+
+// Windows 任务栏图标与分组依赖 AppUserModelID，必须与打包 appId 一致
+if (process.platform === 'win32') {
+    app.setAppUserModelId(APP_USER_MODEL_ID);
+}
+
 // single instance
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
@@ -185,6 +193,7 @@ function openIt() {
         frame: process.platform !== 'darwin',
         transparent: false,
         autoHideMenuBar: true,
+        icon: WINDOW_ICON,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false // https://github.com/electron/electron/issues/27961
@@ -225,6 +234,9 @@ function openIt() {
         arg.webPreferences = arg.webPreferences === undefined ? {} : arg.webPreferences;
         arg.webPreferences.nodeIntegration = true;
         arg.webPreferences.contextIsolation = false;
+        if (WINDOW_ICON) {
+            arg.icon = WINDOW_ICON;
+        }
 
       const html = arg.html;
       const everWindow = mainWindow;

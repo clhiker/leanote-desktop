@@ -159,9 +159,13 @@ function targetPlan(target) {
   }
   if (target === 'win') {
     if (HOST === 'win32') return { ok: true };
-    if (hasCommand('wine') || hasCommand('wine64')) return { ok: true };
-    if (process.env.ALLOW_NO_WINE === '1') return { ok: true, degraded: true, portable: true };
-    return { ok: false, reason: 'wine not found (or ALLOW_NO_WINE=1 for portable zip without installer)' };
+    // electron-builder 26 用纯 JS resedit 写 PE 资源，跨平台不需要 wine；
+    // NSIS 安装包在非 Windows 上才需要 wine/makensis。
+    if (hasCommand('makensis') || hasCommand('wine') || hasCommand('wine64')) return { ok: true };
+    if (process.env.WIN_PORTABLE === '1' || process.env.ALLOW_NO_WINE === '1') {
+      return { ok: true, degraded: true, portable: true };
+    }
+    return { ok: false, reason: 'makensis/wine not found (or WIN_PORTABLE=1 for portable dir+zip)' };
   }
   if (target === 'mac') {
     return HOST === 'darwin' ? { ok: true } : { ok: false, reason: 'requires macOS' };
@@ -217,10 +221,9 @@ function buildWin() {
   if (!p.ok) return mark('win', 'skipped', p.reason);
   const out = outDir('win');
   ensureOut(out);
-  const portable = process.env.WIN_PORTABLE === '1' || p.degraded;
+  const portable = process.env.WIN_PORTABLE === '1' || p.portable;
   const args = ['electron-builder', '--win', portable ? 'dir' : 'nsis', '--x64', '--publish', 'never',
     `--config.directories.output=${out}`, ...builderEnvArgs()];
-  if (p.degraded) args.push('--config.win.signAndEditExecutable=false');
   run(NPX, args);
   if (portable) {
     packageWindowsPortable(out);

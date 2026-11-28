@@ -36,7 +36,7 @@ win:
     - target: nsis
       arch:
         - x64
-  icon: public/images/ico/256.ico
+  icon: public/images/ico/app.ico
   artifactName: Leanote-${version}-win-${arch}-setup.${ext}
 
 mac:
@@ -57,9 +57,9 @@ mac:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
-  installerIcon: public/images/ico/256.ico
-  uninstallerIcon: public/images/ico/256.ico
-  installerHeaderIcon: public/images/ico/256.ico
+  installerIcon: public/images/ico/app.ico
+  uninstallerIcon: public/images/ico/app.ico
+  installerHeaderIcon: public/images/ico/app.ico
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: Leanote
